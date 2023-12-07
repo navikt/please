@@ -1,4 +1,4 @@
-package no.nav.dialogvarsler.plugins
+package no.nav.please.plugins
 
 import io.ktor.server.application.*
 import io.ktor.server.auth.*

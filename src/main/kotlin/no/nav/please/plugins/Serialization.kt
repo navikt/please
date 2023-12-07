@@ -1,4 +1,4 @@
-package no.nav.dialogvarsler.plugins
+package no.nav.please.plugins
 
 import io.ktor.serialization.kotlinx.json.*
 import io.ktor.server.application.*

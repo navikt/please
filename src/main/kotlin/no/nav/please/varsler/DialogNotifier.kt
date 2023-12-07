@@ -1,4 +1,4 @@
-package no.nav.dialogvarsler.varsler
+package no.nav.please.varsler
 
 import io.ktor.websocket.*
 import kotlinx.coroutines.isActive

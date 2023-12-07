@@ -1,7 +1,7 @@
-package no.nav.dialogvarsler
+package no.nav.please
 
 import io.kotest.core.spec.style.StringSpec
-import no.nav.dialogvarsler.varsler.DialogNotifier
+import no.nav.please.varsler.DialogNotifier
 
 class DialogNotifierTest : StringSpec({
 

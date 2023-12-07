@@ -1,9 +1,9 @@
-package no.nav.dialogvarsler
+package no.nav.please
 
 import io.ktor.server.application.*
 import io.ktor.server.netty.*
-import no.nav.dialogvarsler.plugins.*
-import no.nav.dialogvarsler.varsler.WsTicketHandler
+import no.nav.please.plugins.*
+import no.nav.please.varsler.WsTicketHandler
 import org.slf4j.LoggerFactory
 
 fun main(args: Array<String>) {

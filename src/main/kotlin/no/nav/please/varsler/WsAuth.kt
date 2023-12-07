@@ -1,4 +1,4 @@
-package no.nav.dialogvarsler.varsler
+package no.nav.please.varsler
 
 import io.ktor.server.websocket.*
 import io.ktor.websocket.*
@@ -10,7 +10,7 @@ import org.slf4j.LoggerFactory
 import java.lang.IllegalStateException
 
 
-val logger = LoggerFactory.getLogger("no.nav.dialogvarsler.varsler.WsAuth.kt")
+val logger = LoggerFactory.getLogger("no.nav.please.varsler.WsAuth.kt")
 
 suspend fun DefaultWebSocketServerSession.awaitAuthentication(channel: ReceiveChannel<Frame>, ticketHandler: WsTicketHandler): WsListener {
     val result = channel.receiveAsFlow()

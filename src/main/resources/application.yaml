@@ -3,25 +3,16 @@ ktor:
     port: 8080
   application:
     modules:
-      - no.nav.dialogvarsler.ApplicationKt.module
+      - no.nav.please.ApplicationKt.module
 
 topic:
   ny-dialog: "dab.dialog-events-v1"
 
 redis:
-  host: "$REDIS_URI_DIALOGVARSLER:null"
-  username: "$REDIS_USERNAME_DIALOGVARSLER:null"
-  password: "$REDIS_PASSWORD_DIALOGVARSLER:null"
+  host: "$REDIS_URI_PLEASE:null"
+  username: "$REDIS_USERNAME_PLEASE:null"
+  password: "$REDIS_PASSWORD_PLEASE:null"
   channel: "dab.dialog-events-v1"
-
-kafka:
-  brokers: "$KAFKA_BROKERS:null"
-  truststore:
-    path: "KAFKA_TRUSTSTORE_PATH:null"
-    password: "KAFKA_CREDSTORE_PASSWORD:null"
-  keystore:
-    path: "KAFKA_KEYSTORE_PATH:null"
-    password: "KAFKA_CREDSTORE_PASSWORD:null"
 
 no:
   nav:

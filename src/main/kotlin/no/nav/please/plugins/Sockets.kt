@@ -1,15 +1,15 @@
-package no.nav.dialogvarsler.plugins
+package no.nav.please.plugins
 
-import no.nav.dialogvarsler.varsler.WsConnectionHolder.addListener
-import no.nav.dialogvarsler.varsler.WsConnectionHolder.removeListener
+import no.nav.please.varsler.WsConnectionHolder.addListener
+import no.nav.please.varsler.WsConnectionHolder.removeListener
 import io.ktor.server.application.*
 import io.ktor.server.routing.*
 import io.ktor.server.websocket.*
 import io.ktor.websocket.*
 import kotlinx.coroutines.channels.ClosedReceiveChannelException
-import no.nav.dialogvarsler.varsler.WsListener
-import no.nav.dialogvarsler.varsler.WsTicketHandler
-import no.nav.dialogvarsler.varsler.awaitAuthentication
+import no.nav.please.varsler.WsListener
+import no.nav.please.varsler.WsTicketHandler
+import no.nav.please.varsler.awaitAuthentication
 import org.slf4j.LoggerFactory
 import java.time.Duration
 

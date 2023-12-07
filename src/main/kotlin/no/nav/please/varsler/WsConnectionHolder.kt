@@ -1,11 +1,10 @@
-package no.nav.dialogvarsler.varsler
+package no.nav.please.varsler
 
 import io.ktor.server.websocket.*
 import io.ktor.websocket.*
-import io.micrometer.core.instrument.Tag
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.Serializable
-import no.nav.dialogvarsler.plugins.Metrics
+import no.nav.please.plugins.Metrics
 import java.util.*
 import java.util.concurrent.atomic.AtomicInteger
 

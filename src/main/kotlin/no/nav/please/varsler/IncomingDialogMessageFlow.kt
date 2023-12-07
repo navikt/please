@@ -1,4 +1,4 @@
-package no.nav.dialogvarsler.varsler
+package no.nav.please.varsler
 
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*

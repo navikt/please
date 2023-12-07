@@ -4,7 +4,6 @@ val ktor_version: String by project
 val kotlin_version: String by project
 val logback_version: String by project
 val tokensupport_version: String by project
-val kafka_client_version: String by project
 val mockoath_version: String by project
 val kotest_version: String by project
 val prometheus_version: String by project
@@ -17,11 +16,11 @@ plugins {
     id("org.jetbrains.kotlin.plugin.serialization") version "1.9.10"
 }
 
-group = "no.nav.dialogvarsler"
+group = "no.nav.please"
 version = "0.0.1"
 
 application {
-    mainClass.set("no.nav.dialogvarsler.ApplicationKt")
+    mainClass.set("no.nav.please.ApplicationKt")
     val isDevelopment: Boolean = project.ext.has("development")
     applicationDefaultJvmArgs = listOf("-Dio.ktor.development=$isDevelopment", "-Xmx1024m", "-Xms256m")
 }
@@ -52,13 +51,13 @@ data class GithubImageRegistry(
 ktor {
     docker {
         jreVersion.set(JreVersion.JRE_17)
-        localImageName.set("dialogvarsler")
+        localImageName.set("please")
         imageTag.set(providers.environmentVariable("IMAGE_TAG"))
         externalRegistry.set(
             DockerImageRegistry.externalRegistry(
                 username = providers.environmentVariable("USERNAME"),
                 password = providers.environmentVariable("PASSWORD"),
-                project = provider { "veilarbdialog/dialogvarsler" },
+                project = provider { "please" },
                 hostname = provider { "ghcr.io" },
                 namespace = provider { "navikt" }
             )
@@ -80,8 +79,6 @@ dependencies {
     implementation("io.ktor:ktor-server-metrics-micrometer:$ktor_version")
     implementation("io.micrometer:micrometer-registry-prometheus:$prometheus_version")
 
-    implementation("org.apache.kafka:kafka-clients:$kafka_client_version")
-    implementation("io.github.embeddedkafka:embedded-kafka_3:$kafka_client_version")
     implementation("net.logstash.logback:logstash-logback-encoder:$logstash_encoder_version")
 
     implementation("ch.qos.logback:logback-classic:$logback_version")

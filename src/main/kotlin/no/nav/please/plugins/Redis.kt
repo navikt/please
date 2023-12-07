@@ -1,4 +1,4 @@
-package no.nav.dialogvarsler.plugins
+package no.nav.please.plugins
 
 import io.ktor.server.application.*
 import kotlinx.coroutines.CoroutineScope
@@ -8,7 +8,7 @@ import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
-import no.nav.dialogvarsler.varsler.*
+import no.nav.please.varsler.*
 import org.slf4j.LoggerFactory
 import redis.clients.jedis.*
 import java.lang.IllegalArgumentException

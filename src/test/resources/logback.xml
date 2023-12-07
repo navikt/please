@@ -9,10 +9,5 @@
     </root>
     <logger name="org.eclipse.jetty" level="INFO"/>
     <logger name="io.netty" level="INFO"/>
-    <logger name="org.apache.kafka" level="WARN"/>
-    <logger name="kafka.controller" level="WARN"/>
-    <logger name="kafka.server" level="WARN"/>
-    <logger name="kafka.coordinator" level="WARN"/>
-    <logger name="kafka.zookeeper" level="WARN"/>
     <logger name="org.apache.zookeeper" level="WARN"/>
 </configuration>

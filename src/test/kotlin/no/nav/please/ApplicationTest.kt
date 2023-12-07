@@ -1,4 +1,4 @@
-package no.nav.dialogvarsler
+package no.nav.please
 
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
@@ -14,8 +14,8 @@ import io.ktor.server.testing.*
 import io.ktor.websocket.*
 import kotlinx.coroutines.withTimeout
 import kotlinx.serialization.json.Json
-import no.nav.dialogvarsler.varsler.EventType
-import no.nav.dialogvarsler.varsler.IncomingDialogMessageFlow
+import no.nav.please.varsler.EventType
+import no.nav.please.varsler.IncomingDialogMessageFlow
 import no.nav.security.mock.oauth2.MockOAuth2Server
 import org.slf4j.LoggerFactory
 import redis.embedded.RedisServer
