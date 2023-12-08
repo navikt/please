@@ -1,6 +1,3 @@
-name: Deploy PLEASE ${{ github.ref_name }} to ${{ inputs.env }}-gcp
-run-name: Deploy PLEASE ${{ github.ref_name }} to ${{ inputs.env }}-gcp by @${{ github.actor }}
-
 on:
   workflow_call:
     inputs:
