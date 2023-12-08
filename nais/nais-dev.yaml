@@ -2,7 +2,7 @@ kind: Application
 apiVersion: nais.io/v1alpha1
 metadata:
   name: please
-  namespace: dab
+  namespace: poao
   cluster: dev-gcp
   labels:
     team: dab
