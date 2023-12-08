@@ -17,8 +17,12 @@ jobs:
     uses: ./.github/workflows/deploy.yml
     with:
       env: dev
+    secrets:
+      NAIS_DEPLOY_APIKEY: ${{ secrets.NAIS_DEPLOY_APIKEY }}
   prod:
     name: Deploy to prod
     uses: ./.github/workflows/deploy.yml
     with:
       env: prod
+    secrets:
+      NAIS_DEPLOY_APIKEY: ${{ secrets.NAIS_DEPLOY_APIKEY }}

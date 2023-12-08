@@ -14,3 +14,5 @@ jobs:
     uses: ./.github/workflows/deploy.yml
     with:
       env: dev
+    secrets:
+      NAIS_DEPLOY_APIKEY: ${{ secrets.NAIS_DEPLOY_APIKEY }}

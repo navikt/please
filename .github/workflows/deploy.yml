@@ -4,6 +4,9 @@ on:
       env:
         required: true
         type: string
+    secrets:
+      NAIS_DEPLOY_APIKEY:
+        required: true
 
 env:
   IMAGE_TAG: ${{ github.sha }}
