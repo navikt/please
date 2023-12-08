@@ -1,11 +1,12 @@
-name: Deploy PLEASE main to dev and prod
-run-name: Deploy PLEASE feature branch ${{ github.ref_name }} by @${{ github.actor }}
+name: Deploy PLEASE ${{ github.ref_name }} to ${{ inputs.env }}-gcp
+run-name: Deploy PLEASE ${{ github.ref_name }} to ${{ inputs.env }}-gcp by @${{ github.actor }}
+
 on:
-  # TODO: Remove this before merging
-  push:
-    branches:
-      - main
-  workflow_dispatch:
+  workflow_call:
+    inputs:
+      env:
+        required: true
+        type: string
 
 permissions:
   contents: read
@@ -39,6 +40,6 @@ jobs:
       uses: nais/deploy/actions/deploy@v1
       env:
         APIKEY: ${{ secrets.NAIS_DEPLOY_APIKEY }}
-        CLUSTER: dev-gcp
-        RESOURCE: nais/nais-dev.yaml
+        CLUSTER: ${{ inputs.env }}-gcp
+        RESOURCE: nais/nais-${{ inputs.env }}.yaml
         VAR: version=${{ env.IMAGE_TAG }}

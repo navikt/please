@@ -1,0 +1,20 @@
+name: Deploy PLEASE main branch to dev and prod
+run-name:  Deploy PLEASE main branch to dev and prod by @${{ github.actor }}
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  dev:
+    name: Deploy to dev
+    uses: ./.github/workflows/deploy.yml
+    with:
+      env: dev
+  prod:
+    name: Deploy to prod
+    uses: ./.github/workflows/deploy.yml
+    with:
+      env: prod
