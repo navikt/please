@@ -5,7 +5,7 @@ metadata:
   namespace: poao
   cluster: prod-gcp
   labels:
-    team: dab
+    team: poao
   annotations:
     nginx.ingress.kubernetes.io/proxy-read-timeout: "600"
     nginx.ingress.kubernetes.io/proxy-send-timeout: "600"
