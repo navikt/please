@@ -2,10 +2,10 @@ kind: Application
 apiVersion: nais.io/v1alpha1
 metadata:
   name: please
-  namespace: poao
+  namespace: dab
   cluster: dev-gcp
   labels:
-    team: poao
+    team: dab
   annotations:
     nginx.ingress.kubernetes.io/proxy-read-timeout: "600"
     nginx.ingress.kubernetes.io/proxy-send-timeout: "600"
