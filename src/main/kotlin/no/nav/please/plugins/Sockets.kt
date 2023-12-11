@@ -3,6 +3,7 @@ package no.nav.please.plugins
 import no.nav.please.varsler.WsConnectionHolder.addListener
 import no.nav.please.varsler.WsConnectionHolder.removeListener
 import io.ktor.server.application.*
+import io.ktor.server.request.*
 import io.ktor.server.routing.*
 import io.ktor.server.websocket.*
 import io.ktor.websocket.*
@@ -30,14 +31,17 @@ fun Application.configureSockets(ticketHandler: WsTicketHandler) {
                 wsListener = awaitAuthentication(incoming, ticketHandler)
                 addListener(wsListener)
                 this.send("AUTHENTICATED")
-                logger.info("Authenticated")
+                val wsSocketKey = this.call.request.header("Sec-WebSocket-Key")
+                logger.info("Authenticated, Sec-WebSocket-Key $wsSocketKey")
                 // Keep open until termination
                 incoming.receive()
             } catch (e: ClosedReceiveChannelException) {
-                logger.warn("onClose ${closeReason.await()}")
+                val wsSocketKey = this.call.request.header("Sec-WebSocket-Key")
+                logger.warn("onClose, Sec-WebSocket-Key $wsSocketKey, ${closeReason.await()}")
                 wsListener?.let { removeListener(it) }
             } catch (e: Throwable) {
-                logger.warn("onError ${closeReason.await()}", e)
+                val wsSocketKey = this.call.request.header("Sec-WebSocket-Key")
+                logger.warn("onError, Sec-WebSocket-Key $wsSocketKey ${closeReason.await()}", e)
                 wsListener?.let { removeListener(it) }
             } finally {
                 logger.info("Closing websocket connection")

@@ -22,6 +22,9 @@ object DialogNotifier {
         runCatching {
             val event = Json.decodeFromString<DialogHendelse>(messageString)
             val websocketMessage = Json.encodeToString(event.eventType)
+
+            logger.debug("DialogListeners: {}", WsConnectionHolder.dialogListeners)
+
             WsConnectionHolder.dialogListeners[event.fnr]
                 ?.forEach {
                     if (it.wsSession.isActive) {
