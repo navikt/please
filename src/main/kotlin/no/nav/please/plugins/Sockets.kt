@@ -33,8 +33,11 @@ fun Application.configureSockets(ticketHandler: WsTicketHandler) {
                 this.send("AUTHENTICATED")
                 val wsSocketKey = this.call.request.header("Sec-WebSocket-Key")
                 logger.info("Authenticated, Sec-WebSocket-Key $wsSocketKey")
-                // Keep open until termination
-                incoming.receive()
+                while (true) {
+                    // Keep open until termination
+                    val message = incoming.receive()
+                    logger.info("Received unexpected message: ${message}")
+                }
             } catch (e: ClosedReceiveChannelException) {
                 val wsSocketKey = this.call.request.header("Sec-WebSocket-Key")
                 logger.warn("onClose, Sec-WebSocket-Key $wsSocketKey, ${closeReason.await()}")
