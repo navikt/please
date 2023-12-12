@@ -36,7 +36,7 @@ fun Application.configureRouting(publishMessage: (message: NyDialogNotification)
 
             post("/ws-auth-ticket") {
                 try {
-                    // TODO: Add authorization(a2)
+                    // TODO: Add authorization(a2) (POAO-tilgang)
                     try {
                         val subject = call.authentication.principal<TokenValidationContextPrincipal>()
                             ?.context?.anyValidClaims?.get()?.get("sub")?.toString() ?: throw IllegalArgumentException(
