@@ -11,6 +11,7 @@ import kotlinx.serialization.json.Json
 import no.nav.please.varsler.*
 import org.slf4j.LoggerFactory
 import redis.clients.jedis.*
+import redis.clients.jedis.params.SetParams
 import java.lang.IllegalArgumentException
 
 typealias PublishMessage = (NyDialogNotification) -> Long
@@ -77,7 +78,7 @@ class RedisTicketStore(val jedis: JedisPooled): TicketStore {
     }
 
     override fun addSubscription(ticket: ValidTicket, subscription: Subscription) {
-        jedis.set(ticket.value, Json.encodeToString(subscription))
+        jedis.setex(ticket.value, 10, Json.encodeToString(subscription))
     }
 
     override fun removeSubscription(ticket: ValidTicket) {
