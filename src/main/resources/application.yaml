@@ -23,5 +23,5 @@ no:
             accepted_audience: "$AZURE_APP_CLIENT_ID:null"
             issuer_name: "AzureAD"
           - discoveryurl: "$TOKEN_X_WELL_KNOWN_URL:null"
-            accepted_audience: "TOKEN_X_CLIENT_ID:null"
+            accepted_audience: "$TOKEN_X_CLIENT_ID:null"
             issuer_name: "TokenX"
