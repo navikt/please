@@ -8,12 +8,12 @@ import kotlinx.serialization.json.Json
 import org.slf4j.LoggerFactory
 
 enum class EventType {
-    NY_MELDING
+    NY_DIALOGMELDING_FRA_BRUKER_TIL_NAV
 }
 @Serializable
 data class DialogHendelse(
     val eventType: EventType,
-    val fnr: String
+    val subscriptionKey: String
 )
 
 object DialogNotifier {
@@ -25,7 +25,7 @@ object DialogNotifier {
 
             logger.debug("DialogListeners: {}", WsConnectionHolder.dialogListeners)
 
-            WsConnectionHolder.dialogListeners[event.fnr]
+            WsConnectionHolder.dialogListeners[event.subscriptionKey]
                 ?.forEach {
                     if (it.wsSession.isActive) {
                         it.wsSession.send(websocketMessage)

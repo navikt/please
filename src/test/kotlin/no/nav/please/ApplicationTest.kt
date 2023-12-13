@@ -41,48 +41,48 @@ class ApplicationTest : StringSpec({
                 install(WebSockets)
             }
 
-            suspend fun getWsToken(fnr: String, sub: String): String {
+            suspend fun getWsToken(subscriptionKey: String, sub: String): String {
                 val authToken = client.post("/ws-auth-ticket") {
                     bearerAuth(server.issueToken(subject = sub).serialize())
                     contentType(ContentType.Application.Json)
-                    setBody("""{ "fnr": "$fnr" }""")
+                    setBody("""{ "subscriptionKey": "$subscriptionKey" }""")
                 }.bodyAsText()
                 authToken.shouldNotBeEmpty()
                 authToken shouldNotBe null
                 return authToken
             }
 
-            suspend fun postMessage(fnr: String) {
+            suspend fun postMessage(subscriptionKey: String) {
                 client.post("/notify-subscribers") {
                     bearerAuth(server.issueToken(subject = "Z123123").serialize())
                     contentType(ContentType.Application.Json)
-                    setBody("""{ "fnr": "$fnr", "eventType": "NY_MELDING" }""")
+                    setBody("""{ "subscriptionKey": "$subscriptionKey", "eventType": "NY_DIALOGMELDING_FRA_BRUKER_TIL_NAV" }""")
                 }.status shouldBe HttpStatusCode.OK
             }
 
             val veileder1 = "Z123123"
-            val fnr1 = "12345678910"
+            val subscriptionKey1 = "12345678910"
 
             val veileder2 = "Z321321"
-            val fnr2 = "11111178910"
+            val subscriptionKey2 = "11111178910"
 
-            val veileder1token = getWsToken(fnr1, veileder1)
-            val veileder2token = getWsToken(fnr2, veileder2)
+            val veileder1token = getWsToken(subscriptionKey1, veileder1)
+            val veileder2token = getWsToken(subscriptionKey2, veileder2)
 
             client.webSocket("/ws") {
                 awaitAuth(veileder1token)
-                logger.info("Posting to veilarbdialog for test-fnr 1")
-                postMessage(fnr1)
-                receiveStringWithTimeout().let { Json.decodeFromString<EventType>(it)  } shouldBe EventType.NY_MELDING
-                logger.info("Received message, closing websocket for fnr 1")
+                logger.info("Posting to veilarbdialog for test-subscriptionKey 1")
+                postMessage(subscriptionKey1)
+                receiveStringWithTimeout().let { Json.decodeFromString<EventType>(it)  } shouldBe EventType.NY_DIALOGMELDING_FRA_BRUKER_TIL_NAV
+                logger.info("Received message, closing websocket for subscriptionKey 1")
                 close(CloseReason(CloseReason.Codes.NORMAL, "Bye"))
             }
             client.webSocket("/ws") {
                 awaitAuth(veileder2token)
-                logger.info("Posting to veilarbdialog for test-fnr 2")
-                postMessage(fnr2)
-                receiveStringWithTimeout().let { Json.decodeFromString<EventType>(it)  } shouldBe EventType.NY_MELDING
-                logger.info("Received message, closing websocket for fnr 2")
+                logger.info("Posting to veilarbdialog for test-subscriptionKey 2")
+                postMessage(subscriptionKey2)
+                receiveStringWithTimeout().let { Json.decodeFromString<EventType>(it)  } shouldBe EventType.NY_DIALOGMELDING_FRA_BRUKER_TIL_NAV
+                logger.info("Received message, closing websocket for subscriptionKey 2")
                 close(CloseReason(CloseReason.Codes.NORMAL, "Bye"))
             }
         }
@@ -102,7 +102,7 @@ class ApplicationTest : StringSpec({
 //            client.post("/ws-auth-ticket") {
 //                bearerAuth(server.issueToken().serialize())
 //                contentType(ContentType.Application.Json)
-//                setBody("""{ "fnr": "12345678910" }""")
+//                setBody("""{ "subscriptionKey": "12345678910" }""")
 //            }.apply {
 //                assertEquals(HttpStatusCode.OK, status)
 //                UUID.fromString(this.bodyAsText())

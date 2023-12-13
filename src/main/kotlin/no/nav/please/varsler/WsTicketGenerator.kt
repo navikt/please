@@ -6,7 +6,7 @@ import java.util.*
 
 @Serializable
 data class TicketRequest(
-    val fnr: String,
+    val subscriptionKey: String,
 )
 
 sealed class ConnectionTicket {
@@ -37,6 +37,6 @@ class WsTicketHandler(private val ticketStore: TicketStore) {
     }
     fun generateTicket(subject: String, payload: TicketRequest): ValidTicket {
         return ValidTicket(UUID.randomUUID().toString())
-            .also { ticketStore.addSubscription(it, Subscription(subject ,it.value, payload.fnr)) }
+            .also { ticketStore.addSubscription(it, Subscription(subject ,it.value, payload.subscriptionKey)) }
     }
 }

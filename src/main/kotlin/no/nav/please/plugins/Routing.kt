@@ -60,6 +60,6 @@ fun Application.configureRouting(publishMessage: (message: NyDialogNotification)
 
 @Serializable
 data class NyDialogNotification(
-    val fnr: String,
+    val subscriptionKey: String,
     val eventType: EventType
 )
