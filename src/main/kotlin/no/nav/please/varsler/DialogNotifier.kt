@@ -5,6 +5,7 @@ import kotlinx.coroutines.isActive
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import no.nav.please.plugins.Metrics
 import org.slf4j.LoggerFactory
 
 enum class EventType {
@@ -30,7 +31,8 @@ object DialogNotifier {
                 ?.forEach {
                     if (it.wsSession.isActive) {
                         it.wsSession.send(websocketMessage)
-                        logger.warn("Message delivered")
+                        Metrics.registry.counter("websocketevent_delivered", "eventtype", websocketMessage).increment()
+                        logger.info("Message delivered")
                     } else {
                         logger.warn("WS session was not active, could not deliver message")
                         WsConnectionHolder.removeListener(it)
