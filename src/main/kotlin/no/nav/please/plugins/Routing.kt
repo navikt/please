@@ -27,7 +27,7 @@ fun Application.configureRouting(publishMessage: (message: NyDialogNotification)
                 call.respond(HttpStatusCode.OK)
             }
         }
-        authenticate("AzureAD") {
+        authenticate("AzureOrTokenX") {
             post("/notify-subscribers") {
                 val dialogNotification = call.receive<NyDialogNotification>()
                 publishMessage(dialogNotification)

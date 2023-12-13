@@ -7,6 +7,6 @@ import no.nav.security.token.support.v2.tokenValidationSupport
 fun Application.configureAuthentication() {
     val config = this.environment.config
     install(Authentication) {
-        tokenValidationSupport(config = config, name = "AzureAD")
+        tokenValidationSupport(config = config, name = "AzureOrTokenX")
     }
 }
