@@ -12,7 +12,7 @@ metadata:
 spec:
   image: ghcr.io/navikt/please:{{version}}
   ingresses:
-    - https://please.ekstern.nav.no
+    - https://please.nav.no
   port: 8080
   redis:
     - instance: please
