@@ -8,7 +8,8 @@ import kotlinx.serialization.json.Json
 import org.slf4j.LoggerFactory
 
 enum class EventType {
-    NY_DIALOGMELDING_FRA_BRUKER_TIL_NAV
+    NY_DIALOGMELDING_FRA_BRUKER_TIL_NAV,
+    NY_DIALOGMELDING_FRA_NAV_TIL_BRUKER
 }
 @Serializable
 data class DialogHendelse(
