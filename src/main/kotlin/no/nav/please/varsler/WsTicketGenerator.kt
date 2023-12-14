@@ -1,7 +1,6 @@
 package no.nav.please.varsler
 
 import kotlinx.serialization.Serializable
-import java.lang.IllegalArgumentException
 import java.util.*
 
 @Serializable
@@ -19,6 +18,7 @@ sealed class ConnectionTicket {
     }
 }
 class WellFormedTicket(val value: String): ConnectionTicket()
+class ValidatedTicket(val value: String, val subscription: Subscription): ConnectionTicket()
 data object InvalidTicket: ConnectionTicket()
 
 interface TicketStore {
@@ -29,9 +29,10 @@ interface TicketStore {
 
 class WsTicketHandler(private val ticketStore: TicketStore) {
     // TODO: Only allow 1 ticket per sub
-    fun consumeTicket(ticket: WellFormedTicket): Subscription {
+    fun consumeTicket(ticket: WellFormedTicket): ConnectionTicket {
         return ticketStore.getSubscription(ticket)
-            ?: throw IllegalArgumentException("Invalid connection ticket")
+            ?.let { ValidatedTicket(ticket.value, it) }
+            ?: InvalidTicket
     }
     fun generateTicket(subject: String, payload: TicketRequest): WellFormedTicket {
         return WellFormedTicket(UUID.randomUUID().toString())

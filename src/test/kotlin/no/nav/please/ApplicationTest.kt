@@ -1,6 +1,5 @@
 package no.nav.please
 
-import io.kotest.assertions.throwables.shouldThrowExactly
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
@@ -14,13 +13,12 @@ import io.ktor.server.config.*
 import io.ktor.server.engine.*
 import io.ktor.server.testing.*
 import io.ktor.websocket.*
-import kotlinx.coroutines.channels.ClosedReceiveChannelException
 import kotlinx.coroutines.withTimeout
 import kotlinx.serialization.json.Json
+import no.nav.please.plugins.SocketResponse
 import no.nav.please.varsler.EventType
 import no.nav.please.varsler.IncomingDialogMessageFlow
 import no.nav.please.varsler.WsConnectionHolder
-import no.nav.please.varsler.WsListener
 import no.nav.security.mock.oauth2.MockOAuth2Server
 import org.slf4j.LoggerFactory
 import redis.embedded.RedisServer
@@ -93,6 +91,7 @@ class ApplicationTest : StringSpec({
             val client = createClient {
                 install(WebSockets)
             }
+
             val veileder1 = "Z123123"
             val subscriptionKey1 = "12345678910"
             val countBefore = WsConnectionHolder.dialogListeners.values.sumOf { it.size }
@@ -103,8 +102,14 @@ class ApplicationTest : StringSpec({
                 close()
             }
             WsConnectionHolder.dialogListeners.values.sumOf { it.size } shouldBe countBefore
-        }
 
+            client.webSocket("/ws") {
+                send(Frame.Text("LOL"))
+                WsConnectionHolder.dialogListeners.values.sumOf { it.size } shouldBe countBefore
+                close()
+            }
+            WsConnectionHolder.dialogListeners.values.sumOf { it.size } shouldBe countBefore
+        }
     }
 
     "should reestablish websocket and reuse subscribtion" {
@@ -146,21 +151,13 @@ class ApplicationTest : StringSpec({
         testApplication {
             environment { doConfig() }
             application { module() }
-            val client = createClient {
-                install(WebSockets)
-            }
-
-
-            val veileder1 = "Z123123"
-            val subscriptionKey1 = "12345678911"
-
-            val veileder1token = client.getWsToken(subscriptionKey1, veileder1)
-
+            val client = createClient { install(WebSockets) }
             client.webSocket("/ws") {
-                val invalidToken = UUID.randomUUID().toString()
-                shouldThrowExactly<ClosedReceiveChannelException> { awaitAuth(invalidToken) }
+                send(Frame.Text("LOL"))
+                (incoming.receive() as Frame.Text).readText() shouldBe SocketResponse.INVALID_TOKEN.name
+                send(Frame.Text(UUID.randomUUID().toString()))
+                (incoming.receive() as Frame.Text).readText() shouldBe SocketResponse.INVALID_TOKEN.name
             }
-
         }
     }
 

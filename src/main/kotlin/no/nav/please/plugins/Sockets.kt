@@ -31,7 +31,7 @@ fun Application.configureSockets(ticketHandler: WsTicketHandler) {
             try {
                 wsListener = awaitAuthentication(incoming, ticketHandler)
                 addListener(wsListener)
-                this.send("AUTHENTICATED")
+                this.send(SocketResponse.AUTHENTICATED.name)
                 logger.info("Authenticated, Sec-WebSocket-Key: $wsSocketKey")
                 for(frame in incoming) {
                     // Keep open until termination
@@ -42,10 +42,16 @@ fun Application.configureSockets(ticketHandler: WsTicketHandler) {
                 logger.warn("onClose, Sec-WebSocket-Key: $wsSocketKey, ${closeReason.await()}")
             } catch (e: Throwable) {
                 logger.warn("onError, Sec-WebSocket-Key: $wsSocketKey }", e)
+                closeExceptionally(e)
             } finally {
                 wsListener?.let { removeListener(it) }
                 logger.info("Closing websocket connection")
             }
         }
     }
+}
+
+enum class SocketResponse {
+    AUTHENTICATED,
+    INVALID_TOKEN,
 }
