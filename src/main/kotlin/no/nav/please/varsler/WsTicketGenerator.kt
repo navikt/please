@@ -32,7 +32,6 @@ class WsTicketHandler(private val ticketStore: TicketStore) {
     // TODO: Make these expire after x-minutes
     fun consumeTicket(ticket: ValidTicket): Subscription {
         return ticketStore.getSubscription(ticket)
-            ?.also { ticketStore.removeSubscription(ticket) }
             ?: throw IllegalArgumentException("Invalid or already used connection ticket")
     }
     fun generateTicket(subject: String, payload: TicketRequest): ValidTicket {
