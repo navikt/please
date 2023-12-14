@@ -120,10 +120,8 @@ class ApplicationTest : StringSpec({
                 install(WebSockets)
             }
 
-
             val veileder1 = "Z123123"
             val subscriptionKey1 = "12345678911"
-
             val veileder1token = client.getWsToken(subscriptionKey1, veileder1)
 
             client.webSocket("/ws") {
@@ -152,11 +150,16 @@ class ApplicationTest : StringSpec({
             environment { doConfig() }
             application { module() }
             val client = createClient { install(WebSockets) }
+            val veileder = "Z123123"
+            val subscriptionKey = "12345678911"
+            val token = client.getWsToken(subscriptionKey, veileder)
             client.webSocket("/ws") {
                 send(Frame.Text("LOL"))
                 (incoming.receive() as Frame.Text).readText() shouldBe SocketResponse.INVALID_TOKEN.name
                 send(Frame.Text(UUID.randomUUID().toString()))
                 (incoming.receive() as Frame.Text).readText() shouldBe SocketResponse.INVALID_TOKEN.name
+                send(Frame.Text(token))
+                (incoming.receive() as Frame.Text).readText() shouldBe SocketResponse.AUTHENTICATED.name
             }
         }
     }
