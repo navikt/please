@@ -82,7 +82,7 @@ class RedisTicketStore(val jedis: JedisPooled): TicketStore {
     }
 
     override fun addSubscription(ticket: ValidTicket, subscription: Subscription) {
-        jedis.setex(ticket.value, 10, Json.encodeToString(subscription))
+        jedis.setex(ticket.value, 3600*6, Json.encodeToString(subscription))
     }
 
     override fun removeSubscription(ticket: ValidTicket) {
