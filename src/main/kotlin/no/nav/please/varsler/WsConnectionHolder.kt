@@ -36,16 +36,16 @@ object WsConnectionHolder {
             ?.let { it + listOf(wsListener) } ?: listOf(wsListener)
         dialogListeners[wsListener.subscription.subscriptionKey] = newWsListeners
         logger.info("Adding new listener, total listeners: ${dialogListeners.values.sumOf { it.size }}")
-        numConnectionMetric.set(dialogListeners.values.sumOf { it.size })
+        numConnectionMetric.incrementAndGet()
     }
     fun removeListener(wsListener: WsListener) {
         val currentSubscriptions = dialogListeners[wsListener.subscription.subscriptionKey]
         val newWsListeners: List<WsListener> = currentSubscriptions
-            ?.filter { it.subscription == wsListener.subscription } ?: emptyList()
+            ?.filter { it.subscription != wsListener.subscription } ?: emptyList()
         dialogListeners[wsListener.subscription.subscriptionKey] = newWsListeners
         runBlocking {
             wsListener.wsSession.close(CloseReason(CloseReason.Codes.GOING_AWAY,"unsubscribing"))
         }
-        numConnectionMetric.set(dialogListeners.values.sumOf { it.size })
+        numConnectionMetric.decrementAndGet()
     }
 }

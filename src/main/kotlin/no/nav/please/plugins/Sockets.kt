@@ -41,12 +41,11 @@ fun Application.configureSockets(ticketHandler: WsTicketHandler) {
             } catch (e: ClosedReceiveChannelException) {
                 val wsSocketKey = this.call.request.header("Sec-WebSocket-Key")
                 logger.warn("onClose, Sec-WebSocket-Key $wsSocketKey, ${closeReason.await()}")
-                wsListener?.let { removeListener(it) }
             } catch (e: Throwable) {
                 val wsSocketKey = this.call.request.header("Sec-WebSocket-Key")
                 logger.warn("onError, Sec-WebSocket-Key $wsSocketKey ${closeReason.await()}", e)
-                wsListener?.let { removeListener(it) }
             } finally {
+                wsListener?.let { removeListener(it) }
                 logger.info("Closing websocket connection")
             }
         }

@@ -4,6 +4,7 @@ import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import io.kotest.matchers.string.shouldNotBeEmpty
+import io.ktor.client.*
 import io.ktor.client.plugins.websocket.*
 import io.ktor.client.request.*
 import io.ktor.client.statement.*
@@ -16,6 +17,8 @@ import kotlinx.coroutines.withTimeout
 import kotlinx.serialization.json.Json
 import no.nav.please.varsler.EventType
 import no.nav.please.varsler.IncomingDialogMessageFlow
+import no.nav.please.varsler.WsConnectionHolder
+import no.nav.please.varsler.WsListener
 import no.nav.security.mock.oauth2.MockOAuth2Server
 import org.slf4j.LoggerFactory
 import redis.embedded.RedisServer
@@ -33,23 +36,23 @@ class ApplicationTest : StringSpec({
         server.shutdown()
     }
 
+    suspend fun HttpClient.getWsToken(subscriptionKey: String, sub: String): String {
+        val authToken = this.post("/ws-auth-ticket") {
+            bearerAuth(server.issueToken(subject = sub).serialize())
+            contentType(ContentType.Application.Json)
+            setBody("""{ "subscriptionKey": "$subscriptionKey" }""")
+        }.bodyAsText()
+        authToken.shouldNotBeEmpty()
+        authToken shouldNotBe null
+        return authToken
+    }
+
     "should notify subscribers" {
         testApplication {
             environment { doConfig() }
             application { module() }
             val client = createClient {
                 install(WebSockets)
-            }
-
-            suspend fun getWsToken(subscriptionKey: String, sub: String): String {
-                val authToken = client.post("/ws-auth-ticket") {
-                    bearerAuth(server.issueToken(subject = sub).serialize())
-                    contentType(ContentType.Application.Json)
-                    setBody("""{ "subscriptionKey": "$subscriptionKey" }""")
-                }.bodyAsText()
-                authToken.shouldNotBeEmpty()
-                authToken shouldNotBe null
-                return authToken
             }
 
             suspend fun postMessage(subscriptionKey: String) {
@@ -66,8 +69,10 @@ class ApplicationTest : StringSpec({
             val veileder2 = "Z321321"
             val subscriptionKey2 = "11111178910"
 
-            val veileder1token = getWsToken(subscriptionKey1, veileder1)
-            val veileder2token = getWsToken(subscriptionKey2, veileder2)
+            val veileder1token = client.getWsToken(subscriptionKey1, veileder1)
+            val veileder2token = client.getWsToken(subscriptionKey2, veileder2)
+
+            WsConnectionHolder.dialogListeners.values.sumOf { it.size } shouldBe 0
 
             client.webSocket("/ws") {
                 awaitAuth(veileder1token)
@@ -75,8 +80,12 @@ class ApplicationTest : StringSpec({
                 postMessage(subscriptionKey1)
                 receiveStringWithTimeout().let { Json.decodeFromString<EventType>(it)  } shouldBe EventType.NY_DIALOGMELDING_FRA_BRUKER_TIL_NAV
                 logger.info("Received message, closing websocket for subscriptionKey 1")
+                WsConnectionHolder.dialogListeners.values.sumOf { it.size } shouldBe 1
                 close(CloseReason(CloseReason.Codes.NORMAL, "Bye"))
             }
+
+//            WsConnectionHolder.dialogListeners.values.sumOf { it.size } shouldBe 0
+
             client.webSocket("/ws") {
                 awaitAuth(veileder2token)
                 logger.info("Posting to veilarbdialog for test-subscriptionKey 2")
@@ -86,6 +95,27 @@ class ApplicationTest : StringSpec({
                 close(CloseReason(CloseReason.Codes.NORMAL, "Bye"))
             }
         }
+    }
+
+    "WsConnectionHolderShould count correctly" {
+        testApplication {
+            environment { doConfig() }
+            application { module() }
+            val client = createClient {
+                install(WebSockets)
+            }
+            val veileder1 = "Z123123"
+            val subscriptionKey1 = "12345678910"
+            val countBefore = WsConnectionHolder.dialogListeners.values.sumOf { it.size }
+            val veileder1token = client.getWsToken(subscriptionKey1, veileder1)
+            client.webSocket("/ws") {
+                awaitAuth(veileder1token)
+                WsConnectionHolder.dialogListeners.values.sumOf { it.size } shouldBe countBefore + 1
+                close()
+            }
+            WsConnectionHolder.dialogListeners.values.sumOf { it.size } shouldBe countBefore
+        }
+
     }
 
 //    "authorization should work" {
