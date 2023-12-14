@@ -33,7 +33,7 @@ fun Application.configureSockets(ticketHandler: WsTicketHandler) {
                 this.send("AUTHENTICATED")
                 val wsSocketKey = this.call.request.header("Sec-WebSocket-Key")
                 logger.info("Authenticated, Sec-WebSocket-Key $wsSocketKey")
-                while (true) {
+                for(frame in incoming) {
                     // Keep open until termination
                     val message = incoming.receive()
                     logger.info("Received unexpected message: ${message}")
