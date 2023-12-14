@@ -62,8 +62,11 @@ fun Application.configureRedis(): Triple<PublishMessage, PingRedis, TicketStore>
         .onEach { DialogNotifier.notifySubscribers(it) }
         .launchIn(CoroutineScope(Dispatchers.IO))
 
-    val publishMessage: PublishMessage = { message: NyDialogNotification -> jedisPool.publish(channel, Json.encodeToString(message)) }
-        .also { receivers -> logger.info("Message delivered to $receivers receivers") }
+    val publishMessage: PublishMessage = { message: NyDialogNotification ->
+        val numReceivers = jedisPool.publish(channel, Json.encodeToString(message))
+        logger.info("Message delivered to $numReceivers receivers")
+        numReceivers
+    }
     val pingRedis: PingRedis = {
         jedisPool.ping()
     }
