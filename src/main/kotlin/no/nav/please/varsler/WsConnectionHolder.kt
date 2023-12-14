@@ -35,6 +35,7 @@ object WsConnectionHolder {
         val newWsListeners: List<WsListener> = currentSubscriptions
             ?.let { it + listOf(wsListener) } ?: listOf(wsListener)
         dialogListeners[wsListener.subscription.subscriptionKey] = newWsListeners
+        logger.info("Adding new listener, total listeners: ${dialogListeners.values.sumOf { it.size }}")
         numConnectionMetric.set(dialogListeners.values.sumOf { it.size })
     }
     fun removeListener(wsListener: WsListener) {
