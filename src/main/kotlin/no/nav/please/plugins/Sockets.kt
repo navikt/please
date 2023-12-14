@@ -26,24 +26,22 @@ fun Application.configureSockets(ticketHandler: WsTicketHandler) {
     routing {
         webSocket("/ws") {
             logger.info("Opening websocket connection")
+            val wsSocketKey = this.call.request.header("Sec-WebSocket-Key")
             var wsListener: WsListener? = null
             try {
                 wsListener = awaitAuthentication(incoming, ticketHandler)
                 addListener(wsListener)
                 this.send("AUTHENTICATED")
-                val wsSocketKey = this.call.request.header("Sec-WebSocket-Key")
-                logger.info("Authenticated, Sec-WebSocket-Key $wsSocketKey")
+                logger.info("Authenticated, Sec-WebSocket-Key: $wsSocketKey")
                 for(frame in incoming) {
                     // Keep open until termination
                     val message = incoming.receive()
-                    logger.info("Received unexpected message: ${message}")
+                    logger.info("Received unexpected message: ${message}, Sec-WebSocket-Key: $wsSocketKey")
                 }
             } catch (e: ClosedReceiveChannelException) {
-                val wsSocketKey = this.call.request.header("Sec-WebSocket-Key")
-                logger.warn("onClose, Sec-WebSocket-Key $wsSocketKey, ${closeReason.await()}")
+                logger.warn("onClose, Sec-WebSocket-Key: $wsSocketKey, ${closeReason.await()}")
             } catch (e: Throwable) {
-                val wsSocketKey = this.call.request.header("Sec-WebSocket-Key")
-                logger.warn("onError, Sec-WebSocket-Key $wsSocketKey ${closeReason.await()}", e)
+                logger.warn("onError, Sec-WebSocket-Key: $wsSocketKey }", e)
             } finally {
                 wsListener?.let { removeListener(it) }
                 logger.info("Closing websocket connection")

@@ -37,11 +37,11 @@ fun tryAuthenticateWithMessage(frame: Frame, ticketHandler: WsTicketHandler): Au
         if (frame !is Frame.Text) return AuthResult.Failed
         val connectionTicket = ConnectionTicket.of(frame.readText())
         return when (connectionTicket) {
-            is ValidTicket -> AuthResult.Success(ticketHandler.consumeTicket(connectionTicket))
+            is WellFormedTicket -> AuthResult.Success(ticketHandler.consumeTicket(connectionTicket))
             else -> AuthResult.Failed
         }
     } catch (e: Throwable) {
-        logger.warn("Failed to deserialize ws-message", e)
+        logger.warn("Failed to handle auth ticket", e)
         return AuthResult.Failed
     }
 }

@@ -1,5 +1,6 @@
 package no.nav.please
 
+import io.kotest.assertions.throwables.shouldThrowExactly
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
@@ -13,6 +14,7 @@ import io.ktor.server.config.*
 import io.ktor.server.engine.*
 import io.ktor.server.testing.*
 import io.ktor.websocket.*
+import kotlinx.coroutines.channels.ClosedReceiveChannelException
 import kotlinx.coroutines.withTimeout
 import kotlinx.serialization.json.Json
 import no.nav.please.varsler.EventType
@@ -22,6 +24,7 @@ import no.nav.please.varsler.WsListener
 import no.nav.security.mock.oauth2.MockOAuth2Server
 import org.slf4j.LoggerFactory
 import redis.embedded.RedisServer
+import java.util.UUID
 
 
 class ApplicationTest : StringSpec({
@@ -34,17 +37,6 @@ class ApplicationTest : StringSpec({
         redisServer.stop()
         IncomingDialogMessageFlow.stop()
         server.shutdown()
-    }
-
-    suspend fun HttpClient.getWsToken(subscriptionKey: String, sub: String): String {
-        val authToken = this.post("/ws-auth-ticket") {
-            bearerAuth(server.issueToken(subject = sub).serialize())
-            contentType(ContentType.Application.Json)
-            setBody("""{ "subscriptionKey": "$subscriptionKey" }""")
-        }.bodyAsText()
-        authToken.shouldNotBeEmpty()
-        authToken shouldNotBe null
-        return authToken
     }
 
     "should notify subscribers" {
@@ -77,19 +69,16 @@ class ApplicationTest : StringSpec({
             client.webSocket("/ws") {
                 awaitAuth(veileder1token)
                 logger.info("Posting to veilarbdialog for test-subscriptionKey 1")
-                postMessage(subscriptionKey1)
+                client.notifySubscribers(subscriptionKey1, EventType.NY_DIALOGMELDING_FRA_BRUKER_TIL_NAV)
                 receiveStringWithTimeout().let { Json.decodeFromString<EventType>(it)  } shouldBe EventType.NY_DIALOGMELDING_FRA_BRUKER_TIL_NAV
                 logger.info("Received message, closing websocket for subscriptionKey 1")
                 WsConnectionHolder.dialogListeners.values.sumOf { it.size } shouldBe 1
                 close(CloseReason(CloseReason.Codes.NORMAL, "Bye"))
             }
-
-//            WsConnectionHolder.dialogListeners.values.sumOf { it.size } shouldBe 0
-
             client.webSocket("/ws") {
                 awaitAuth(veileder2token)
                 logger.info("Posting to veilarbdialog for test-subscriptionKey 2")
-                postMessage(subscriptionKey2)
+                client.notifySubscribers(subscriptionKey2, EventType.NY_DIALOGMELDING_FRA_BRUKER_TIL_NAV)
                 receiveStringWithTimeout().let { Json.decodeFromString<EventType>(it)  } shouldBe EventType.NY_DIALOGMELDING_FRA_BRUKER_TIL_NAV
                 logger.info("Received message, closing websocket for subscriptionKey 2")
                 close(CloseReason(CloseReason.Codes.NORMAL, "Bye"))
@@ -97,7 +86,7 @@ class ApplicationTest : StringSpec({
         }
     }
 
-    "WsConnectionHolderShould count correctly" {
+    "WsConnectionHolder should count correctly" {
         testApplication {
             environment { doConfig() }
             application { module() }
@@ -116,6 +105,63 @@ class ApplicationTest : StringSpec({
             WsConnectionHolder.dialogListeners.values.sumOf { it.size } shouldBe countBefore
         }
 
+    }
+
+    "should reestablish websocket and reuse subscribtion" {
+        testApplication {
+            environment { doConfig() }
+            application { module() }
+            val client = createClient {
+                install(WebSockets)
+            }
+
+
+            val veileder1 = "Z123123"
+            val subscriptionKey1 = "12345678911"
+
+            val veileder1token = client.getWsToken(subscriptionKey1, veileder1)
+
+            client.webSocket("/ws") {
+                awaitAuth(veileder1token)
+                logger.info("Posting to veilarbdialog for test-subscriptionKey 1")
+                client.notifySubscribers(subscriptionKey1, EventType.NY_DIALOGMELDING_FRA_BRUKER_TIL_NAV)
+                receiveStringWithTimeout().let { Json.decodeFromString<EventType>(it)  } shouldBe EventType.NY_DIALOGMELDING_FRA_BRUKER_TIL_NAV
+                logger.info("Received message, closing websocket for subscriptionKey 1")
+                close(CloseReason(CloseReason.Codes.NORMAL, "Bye"))
+            }
+            client.webSocket("/ws") {
+                logger.info("Reestablish session with same token")
+                awaitAuth(veileder1token)
+                logger.info("Posting to veilarbdialog for test-subscriptionKey 1")
+                client.notifySubscribers(subscriptionKey1, EventType.NY_DIALOGMELDING_FRA_BRUKER_TIL_NAV)
+                receiveStringWithTimeout().let { Json.decodeFromString<EventType>(it)  } shouldBe EventType.NY_DIALOGMELDING_FRA_BRUKER_TIL_NAV
+                logger.info("Received message, closing websocket for subscriptionKey 1")
+                close(CloseReason(CloseReason.Codes.NORMAL, "Bye"))
+            }
+
+        }
+    }
+
+    "should fail on invalid subscription" {
+        testApplication {
+            environment { doConfig() }
+            application { module() }
+            val client = createClient {
+                install(WebSockets)
+            }
+
+
+            val veileder1 = "Z123123"
+            val subscriptionKey1 = "12345678911"
+
+            val veileder1token = client.getWsToken(subscriptionKey1, veileder1)
+
+            client.webSocket("/ws") {
+                val invalidToken = UUID.randomUUID().toString()
+                shouldThrowExactly<ClosedReceiveChannelException> { awaitAuth(invalidToken) }
+            }
+
+        }
     }
 
 //    "authorization should work" {
@@ -179,4 +225,23 @@ suspend fun DefaultClientWebSocketSession.receiveStringWithTimeout(): String {
     return withTimeout(500) {
         (incoming.receive() as? Frame.Text)?.readText() ?: ""
     }
+}
+
+suspend fun HttpClient.getWsToken(subscriptionKey: String, sub: String): String {
+    val authToken = this.post("/ws-auth-ticket") {
+        bearerAuth(ApplicationTest.server.issueToken(subject = sub).serialize())
+        contentType(ContentType.Application.Json)
+        setBody("""{ "subscriptionKey": "$subscriptionKey" }""")
+    }.bodyAsText()
+    authToken.shouldNotBeEmpty()
+    authToken shouldNotBe null
+    return authToken
+}
+
+suspend fun HttpClient.notifySubscribers(subscriptionKey: String, eventType: EventType) {
+    this.post("/notify-subscribers") {
+        bearerAuth(ApplicationTest.server.issueToken(subject = "Z123123").serialize())
+        contentType(ContentType.Application.Json)
+        setBody("""{ "subscriptionKey": "$subscriptionKey", "eventType": "${eventType.name}" }""")
+    }.status shouldBe HttpStatusCode.OK
 }
