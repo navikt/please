@@ -11,8 +11,6 @@ import kotlinx.serialization.json.Json
 import no.nav.please.varsler.*
 import org.slf4j.LoggerFactory
 import redis.clients.jedis.*
-import redis.clients.jedis.params.SetParams
-import java.lang.IllegalArgumentException
 
 typealias PublishMessage = (NyDialogNotification) -> Long
 typealias PingRedis = () -> String
@@ -35,12 +33,11 @@ fun Application.configureRedis(): Triple<PublishMessage, PingRedis, TicketStore>
 
 
     val (host, port) = hostAndPort.split(":")
-        .also { if (it.size < 2) throw IllegalArgumentException("Malformed redis url") }
+        .also { require(it.size >= 2) { "Malformed redis url" } }
     val redisHostAndPort = HostAndPort(host, port.toInt())
     log.info("Connecting to redis, host: $host port: $port user: $username channel: $channel")
 
     val jedisPool = when {
-//        username != null && password != null -> JedisPool(JedisPoolConfig(), host, port.toInt(), 60000, username, password)
         username != null && password != null -> JedisPooled(redisHostAndPort, clientConfig)
         else -> {
             log.info("Fallback to local test connection (localhost) for redis")
@@ -76,16 +73,15 @@ fun Application.configureRedis(): Triple<PublishMessage, PingRedis, TicketStore>
 }
 
 class RedisTicketStore(val jedis: JedisPooled): TicketStore {
-    override fun getSubscription(ticket: ValidTicket): Subscription? {
-        val value = jedis.get(ticket.value)
-        return Json.decodeFromString<Subscription>(value)
+    override fun getSubscription(ticket: WellFormedTicket): Subscription? {
+        return jedis[ticket.value]?.let { Json.decodeFromString<Subscription>(it) }
     }
 
-    override fun addSubscription(ticket: ValidTicket, subscription: Subscription) {
+    override fun addSubscription(ticket: WellFormedTicket, subscription: Subscription) {
         jedis.setex(ticket.value, 3600*6, Json.encodeToString(subscription))
     }
 
-    override fun removeSubscription(ticket: ValidTicket) {
+    override fun removeSubscription(ticket: WellFormedTicket) {
         jedis.del(ticket.value)
     }
 

@@ -1,7 +1,6 @@
 package no.nav.please.varsler
 
 import kotlinx.serialization.Serializable
-import java.lang.IllegalArgumentException
 import java.util.*
 
 @Serializable
@@ -13,29 +12,30 @@ sealed class ConnectionTicket {
     companion object {
         fun of(value: String): ConnectionTicket {
             return runCatching { UUID.fromString(value) }
-                .getOrNull()?.let { ValidTicket(it.toString()) }
+                .getOrNull()?.let { WellFormedTicket(it.toString()) }
                 ?: InvalidTicket
         }
     }
 }
-class ValidTicket(val value: String): ConnectionTicket()
+class WellFormedTicket(val value: String): ConnectionTicket()
+class ValidatedTicket(val value: String, val subscription: Subscription): ConnectionTicket()
 data object InvalidTicket: ConnectionTicket()
 
 interface TicketStore {
-    fun getSubscription(ticket: ValidTicket): Subscription?
-    fun addSubscription(token: ValidTicket, ticket: Subscription)
-    fun removeSubscription(ticket: ValidTicket)
+    fun getSubscription(ticket: WellFormedTicket): Subscription?
+    fun addSubscription(token: WellFormedTicket, ticket: Subscription)
+    fun removeSubscription(ticket: WellFormedTicket)
 }
 
 class WsTicketHandler(private val ticketStore: TicketStore) {
     // TODO: Only allow 1 ticket per sub
-    // TODO: Make these expire after x-minutes
-    fun consumeTicket(ticket: ValidTicket): Subscription {
+    fun consumeTicket(ticket: WellFormedTicket): ConnectionTicket {
         return ticketStore.getSubscription(ticket)
-            ?: throw IllegalArgumentException("Invalid or already used connection ticket")
+            ?.let { ValidatedTicket(ticket.value, it) }
+            ?: InvalidTicket
     }
-    fun generateTicket(subject: String, payload: TicketRequest): ValidTicket {
-        return ValidTicket(UUID.randomUUID().toString())
+    fun generateTicket(subject: String, payload: TicketRequest): WellFormedTicket {
+        return WellFormedTicket(UUID.randomUUID().toString())
             .also { ticketStore.addSubscription(it, Subscription(subject ,it.value, payload.subscriptionKey)) }
     }
 }
