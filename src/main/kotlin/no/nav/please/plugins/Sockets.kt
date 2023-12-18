@@ -25,7 +25,6 @@ fun Application.configureSockets(ticketHandler: WsTicketHandler) {
     }
     routing {
         webSocket("/ws") {
-            logger.info("Opening websocket connection")
             val wsSocketKey = this.call.request.header("Sec-WebSocket-Key")
             var wsListener: WsListener? = null
             try {
@@ -39,13 +38,12 @@ fun Application.configureSockets(ticketHandler: WsTicketHandler) {
                     logger.info("Received unexpected message: ${message}, Sec-WebSocket-Key: $wsSocketKey")
                 }
             } catch (e: ClosedReceiveChannelException) {
-                logger.warn("onClose, Sec-WebSocket-Key: $wsSocketKey, ${closeReason.await()}")
+                logger.info("onClose, Sec-WebSocket-Key: $wsSocketKey, ${closeReason.await()}")
             } catch (e: Throwable) {
                 logger.warn("onError, Sec-WebSocket-Key: $wsSocketKey }", e)
                 closeExceptionally(e)
             } finally {
                 wsListener?.let { removeListener(it) }
-                logger.info("Closing websocket connection")
             }
         }
     }
