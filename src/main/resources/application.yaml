@@ -1,8 +1,8 @@
 ktor:
   deployment:
-    connectionGroupSize: 8
-    workerGroupSize: 8
-    callGroupSize: 16
+    connectionGroupSize: 16
+    workerGroupSize: 16
+    callGroupSize: 32
     port: 8080
   application:
     modules:
