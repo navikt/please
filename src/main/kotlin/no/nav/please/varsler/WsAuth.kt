@@ -6,7 +6,6 @@ import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.flow.*
 import no.nav.please.plugins.SocketResponse
 import org.slf4j.LoggerFactory
-import java.lang.IllegalStateException
 
 val logger = LoggerFactory.getLogger("no.nav.please.varsler.WsAuth.kt")
 
@@ -19,10 +18,11 @@ suspend fun DefaultWebSocketServerSession.awaitAuthentication(channel: ReceiveCh
             wsSession = this,
             subscription = result.subscription
         )
-        else -> throw IllegalStateException("Failed to authenticate")
+        else -> throw ClientClosedException("Socket closed before authenticated")
     }
 }
 
+class ClientClosedException(message: String): Exception(message)
 
 sealed class AuthResult {
     class Success(val subscription: Subscription): AuthResult()

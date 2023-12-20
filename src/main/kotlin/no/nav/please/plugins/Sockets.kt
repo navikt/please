@@ -8,6 +8,7 @@ import io.ktor.server.routing.*
 import io.ktor.server.websocket.*
 import io.ktor.websocket.*
 import kotlinx.coroutines.channels.ClosedReceiveChannelException
+import no.nav.please.varsler.ClientClosedException
 import no.nav.please.varsler.WsListener
 import no.nav.please.varsler.WsTicketHandler
 import no.nav.please.varsler.awaitAuthentication
@@ -39,6 +40,8 @@ fun Application.configureSockets(ticketHandler: WsTicketHandler) {
                 }
             } catch (e: ClosedReceiveChannelException) {
                 logger.info("onClose, Sec-WebSocket-Key: $wsSocketKey, ${closeReason.await()}")
+            } catch (e: ClientClosedException) {
+                logger.info("${e.message}, Sec-WebSocket-Key: $wsSocketKey, ${closeReason.await()}")
             } catch (e: Throwable) {
                 logger.warn("onError, Sec-WebSocket-Key: $wsSocketKey }", e)
                 closeExceptionally(e)
