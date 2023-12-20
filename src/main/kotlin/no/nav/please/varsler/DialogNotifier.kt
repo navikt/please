@@ -26,6 +26,9 @@ object DialogNotifier {
             val websocketMessage = Json.encodeToString(event.eventType)
 
             WsConnectionHolder.dialogListeners[event.subscriptionKey]
+                ?.also { if (it.isNotEmpty()) {
+                    logger.info("Delivering message to ${it.size} receivers")
+                } }
                 ?.forEach {
                     if (it.wsSession.isActive) {
                         it.wsSession.send(websocketMessage)
