@@ -15,7 +15,8 @@ typealias SubscriptionKey = String
 data class Subscription(
     val sub: String,
     val connectionTicket: String,
-    val subscriptionKey: SubscriptionKey
+    val subscriptionKey: SubscriptionKey,
+    val events: List<EventType>
 )
 
 data class WsListener(

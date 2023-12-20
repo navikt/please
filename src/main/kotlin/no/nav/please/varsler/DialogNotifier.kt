@@ -26,6 +26,7 @@ object DialogNotifier {
             val websocketMessage = Json.encodeToString(event.eventType)
 
             WsConnectionHolder.dialogListeners[event.subscriptionKey]
+                ?.filter { it.subscription.events.contains(event.eventType) }
                 ?.also { if (it.isNotEmpty()) {
                     logger.info("Delivering message to ${it.size} receivers")
                 } }
