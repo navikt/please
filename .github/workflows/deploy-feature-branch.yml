@@ -1,4 +1,4 @@
-name: Deploy PLEASE feature branch ${{ github.ref_name }} to dev
+name: Deploy PLEASE feature branch to dev
 run-name:  Deploy PLEASE feature branch ${{ github.ref_name }} to dev by @${{ github.actor }}
 
 on:
