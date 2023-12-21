@@ -6,6 +6,7 @@ import java.util.*
 @Serializable
 data class TicketRequest(
     val subscriptionKey: String,
+    val events: List<EventType>? = EventType.entries
 )
 
 sealed class ConnectionTicket {
@@ -36,6 +37,6 @@ class WsTicketHandler(private val ticketStore: TicketStore) {
     }
     fun generateTicket(subject: String, payload: TicketRequest): WellFormedTicket {
         return WellFormedTicket(UUID.randomUUID().toString())
-            .also { ticketStore.addSubscription(it, Subscription(subject ,it.value, payload.subscriptionKey)) }
+            .also { ticketStore.addSubscription(it, Subscription(subject ,it.value, payload.subscriptionKey, payload.events ?: EventType.entries)) }
     }
 }
