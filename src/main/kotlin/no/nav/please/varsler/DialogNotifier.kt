@@ -22,6 +22,7 @@ object DialogNotifier {
     private val logger = LoggerFactory.getLogger(javaClass)
     suspend fun notifySubscribers(messageString: String) {
         runCatching {
+            logger.info("Shall deliver message")
             val event = Json.decodeFromString<DialogHendelse>(messageString)
             val websocketMessage = Json.encodeToString(event.eventType)
 

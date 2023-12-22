@@ -18,6 +18,8 @@ fun Application.configureRouting(publishMessage: (message: NyDialogNotification)
     routing {
         route("/isAlive") {
             get {
+                val redisStatus = pingRedis()
+                require(redisStatus == "PONG") { "Redis returnerer $redisStatus fra ping()" }
                 call.respond(HttpStatusCode.OK)
             }
         }
