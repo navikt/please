@@ -22,11 +22,12 @@ object DialogNotifier {
     private val logger = LoggerFactory.getLogger(javaClass)
     suspend fun notifySubscribers(messageString: String) {
         runCatching {
-            logger.info("Shall deliver message")
             val event = Json.decodeFromString<DialogHendelse>(messageString)
             val websocketMessage = Json.encodeToString(event.eventType)
+            logger.info("Shall deliver message: ${event.eventType.name}")
 
             WsConnectionHolder.dialogListeners[event.subscriptionKey]
+                ?.also { logger.info("Message candidates: ${it.map { it.subscription.connectionTicket to it.subscription.events }}") }
                 ?.filter { it.subscription.events.contains(event.eventType) }
                 ?.also { if (it.isNotEmpty()) {
                     logger.info("Delivering message to ${it.size} receivers")

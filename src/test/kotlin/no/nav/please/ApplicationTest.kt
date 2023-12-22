@@ -138,7 +138,6 @@ class ApplicationTest : StringSpec({
                 client.notifySubscribers(subscriptionKey, EventType.NY_DIALOGMELDING_FRA_NAV_TIL_BRUKER)
                 client.notifySubscribers(subscriptionKey, EventType.NY_DIALOGMELDING_FRA_BRUKER_TIL_NAV)
             } shouldBe EventType.NY_DIALOGMELDING_FRA_BRUKER_TIL_NAV
-            close(CloseReason(CloseReason.Codes.NORMAL, "Bye"))
         }
     }
 
@@ -206,8 +205,17 @@ suspend fun DefaultClientWebSocketSession.receiveAfter(block: suspend () -> Unit
 
 fun getTicketBody(subscriptionKey: String, events: List<EventType>?): String {
     return if (events == null) """{ "subscriptionKey": "$subscriptionKey" }"""
-    else """{ "subscriptionKey": "$subscriptionKey", "events": [${events.joinToString(",")}] }"""
+    else """{ "subscriptionKey": "$subscriptionKey", "events": [${events.map { "\"${it}\"" }.joinToString(",")}] }"""
 }
+//"""
+//{ "subscriptionKey": "123123123", "events": ["NY_DIALOGMELDING_FRA_BRUKER_TIL_NAV"] }
+//"""
+//"""
+//{"subscriptionKey":"16917197656","events":["NY_DIALOGMELDING_FRA_BRUKER_TIL_NAV"]}
+//"""
+//"""
+//{"subscriptionKey":"16917197656","events":["NY_DIALOGMELDING_FRA_BRUKER_TIL_NAV"]}
+//"""
 
 suspend fun HttpClient.getWsToken(subscriptionKey: String, sub: String, events: List<EventType>? = null) : String {
     val authToken = this.post("/ws-auth-ticket") {
