@@ -38,16 +38,16 @@ fun Application.configureRouting(publishMessage: (message: NyDialogNotification)
             post("/ws-auth-ticket") {
                 try {
                     try {
-                        val subject = call.authentication.principal<TokenValidationContextPrincipal>()
-                            ?.context?.anyValidClaims?.get()?.get("sub")?.toString() ?: throw IllegalArgumentException(
-                            "No subject claim found")
+                        val claims = call.authentication.principal<TokenValidationContextPrincipal>()
+                            ?.context?.anyValidClaims?.get()
+                        val subject = claims?.get("sub")?.toString() ?: throw IllegalArgumentException("No subject claim found")
                         val payload = call.receive<TicketRequest>()
 
-                        val externalUserPin = payload.subscriptionKey // TODO: Must be obvious that subscriptionKey is always a PIN?
-                        val navIdent = UUID.fromString(subject) // TODO: IS this always true?
-
                         // TODO: Only necessary when NAV employee sends message to external user
-                        val isAuthorized = isAuthorized(navIdent, externalUserPin)
+                        val externalUserPin = payload.subscriptionKey // TODO: Must be obvious that subscriptionKey is always a PIN?
+                        val employeeAzureId = claims.get("oid")?.toString() ?: throw IllegalArgumentException("No oid claim found")
+
+                        val isAuthorized = isAuthorized(UUID.fromString(employeeAzureId), externalUserPin)
                         if (!isAuthorized) {
                             call.respond(HttpStatusCode.Forbidden, "Not authorized to send message to the external user")
                             return@post
