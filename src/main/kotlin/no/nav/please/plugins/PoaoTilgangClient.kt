@@ -24,8 +24,7 @@ fun Application.configurePoaoTilgangClient(): VerifyAuthorization {
     )
 
     // TODO: Implement authorization check
-    val s: VerifyAuthorization = { uuid: EmployeeAzureId, s: PersonalIdentityNumber ->
+    return { uuid: EmployeeAzureId, s: PersonalIdentityNumber ->
         true
     }
-    return s
 }
