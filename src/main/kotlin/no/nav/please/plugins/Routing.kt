@@ -13,8 +13,9 @@ import no.nav.please.varsler.EventType
 import no.nav.please.varsler.TicketRequest
 import no.nav.please.varsler.logger
 import no.nav.security.token.support.v2.TokenValidationContextPrincipal
+import java.util.*
 
-fun Application.configureRouting(publishMessage: (message: NyDialogNotification) -> Long, pingRedis: PingRedis, ticketHandler: WsTicketHandler) {
+fun Application.configureRouting(publishMessage: (message: NyDialogNotification) -> Long, pingRedis: PingRedis, ticketHandler: WsTicketHandler, isAuthorized: isAuthorizedToContactExternalUser) {
     routing {
         route("/isAlive") {
             get {
@@ -36,12 +37,22 @@ fun Application.configureRouting(publishMessage: (message: NyDialogNotification)
 
             post("/ws-auth-ticket") {
                 try {
-                    // TODO: Add authorization(a2) (POAO-tilgang)
                     try {
                         val subject = call.authentication.principal<TokenValidationContextPrincipal>()
                             ?.context?.anyValidClaims?.get()?.get("sub")?.toString() ?: throw IllegalArgumentException(
                             "No subject claim found")
                         val payload = call.receive<TicketRequest>()
+
+                        val externalUserPin = payload.subscriptionKey // TODO: Must be obvious that subscriptionKey is always a PIN?
+                        val navIdent = UUID.fromString(subject) // TODO: IS this always true?
+
+                        // TODO: Only necessary when NAV employee sends message to external user
+                        val isAuthorized = isAuthorized(navIdent, externalUserPin)
+                        if (!isAuthorized) {
+                            call.respond(HttpStatusCode.Forbidden, "Not authorized to send message to the external user")
+                            return@post
+                        }
+
                         val ticket = ticketHandler.generateTicket(subject, payload)
                         call.respondText(ticket.value)
                     } catch (e: CannotTransformContentToTypeException) {

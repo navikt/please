@@ -4,11 +4,9 @@ import io.ktor.server.application.*
 import no.nav.poao_tilgang.client.*
 import java.util.*
 
-typealias EmployeeAzureId = UUID
-typealias PersonalIdentityNumber = String // TODO: Change so it reflects that this should always represent an external user
-typealias VerifyAuthorization = (EmployeeAzureId, PersonalIdentityNumber) -> Boolean
+typealias isAuthorizedToContactExternalUser = (employeeAzureId: UUID, externalUserIdentityNumber: String) -> Boolean
 
-fun Application.configurePoaoTilgangClient(getMachineToMachineToken: GetMachineToMachineToken): VerifyAuthorization {
+fun Application.configurePoaoTilgangClient(getMachineToMachineToken: GetMachineToMachineToken): isAuthorizedToContactExternalUser {
 
     val config = this.environment.config
     val poaoTilgangUrl = config.property("poao-tilgang.url").getString()
@@ -21,11 +19,11 @@ fun Application.configurePoaoTilgangClient(getMachineToMachineToken: GetMachineT
         )
     )
 
-    return { uuid: EmployeeAzureId, externalUserPin: PersonalIdentityNumber ->
+    return { employeeAzureId: UUID, externalUserIdentityNumber: String ->
         val decision = client.evaluatePolicy(NavAnsattTilgangTilEksternBrukerPolicyInput(
-            navAnsattAzureId = uuid,
+            navAnsattAzureId = employeeAzureId,
             tilgangType = TilgangType.SKRIVE, // TODO: Decide on what is the correct permission
-            norskIdent = externalUserPin
+            norskIdent = externalUserIdentityNumber
         )).get()
 
         decision?.isPermit ?: false
