@@ -19,6 +19,8 @@ fun Application.module() {
     configureMonitoring()
     configureMicrometer()
     configureSerialization()
+    val getMachineToMachineToken = configureTokenProvider()
+    val verifyAuthorization = configurePoaoTilgangClient(getMachineToMachineToken)
     val (publishMessage, pingRedis, ticketStore) = configureRedis()
     val ticketHandler = WsTicketHandler(ticketStore)
     configureSockets(ticketHandler)

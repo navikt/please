@@ -10,6 +10,7 @@ val prometheus_version: String by project
 val logstash_encoder_version: String by project
 val jedis_version: String by project
 val poao_tilgang_version: String by project
+val nav_token_client_version: String by project
 
 plugins {
     kotlin("jvm") version "1.9.10"
@@ -88,6 +89,7 @@ dependencies {
     implementation("redis.clients:jedis:$jedis_version")
 
     implementation("no.nav.poao-tilgang:client:$poao_tilgang_version")
+    implementation("no.nav.common:token-client:$nav_token_client_version")
 
     testImplementation("io.kotest:kotest-runner-junit5:$kotest_version")
     testImplementation("io.kotest:kotest-assertions-core:$kotest_version")
