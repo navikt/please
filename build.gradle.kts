@@ -10,6 +10,7 @@ val prometheus_version: String by project
 val logstash_encoder_version: String by project
 val valkey_java_version: String by project
 val arrow_version: String by project
+val poao_tilgang_version: String by project
 
 plugins {
     kotlin("jvm") version "2.2.20"
@@ -38,6 +39,7 @@ kotlin {
 
 repositories {
     mavenCentral()
+    maven(url = "https://github-package-registry-mirror.gc.nav.no/cached/maven-release")
 }
 
 tasks.withType<Test>().configureEach {
@@ -90,6 +92,8 @@ dependencies {
     implementation("no.nav.security:token-validation-ktor-v3:$tokensupport_version")
 
     implementation("io.valkey:valkey-java:$valkey_java_version")
+    implementation("no.nav.poao-tilgang:client:$poao_tilgang_version")
+
     testImplementation("io.kotest:kotest-runner-junit5:$kotest_version")
     testImplementation("io.kotest:kotest-assertions-core:$kotest_version")
     testImplementation("org.signal:embedded-redis:0.8.3")
