@@ -28,3 +28,7 @@ no:
           - discoveryurl: "$TOKEN_X_WELL_KNOWN_URL:null"
             accepted_audience: "$TOKEN_X_CLIENT_ID:null"
             issuer_name: "TokenX"
+
+poao-tilgang:
+  url: "$POAO_TILGANG_CLIENT_URL"
+  token-scope: "$POAO_TILGANG_CLIENT_SCOPE"
