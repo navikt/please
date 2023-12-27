@@ -39,7 +39,22 @@ kotlin {
 
 repositories {
     mavenCentral()
-    maven(url = "https://github-package-registry-mirror.gc.nav.no/cached/maven-release")
+    exclusiveContent {
+        forRepository {
+            maven {
+                url = uri("https://maven.pkg.github.com/navikt/poao-tilgang")
+                credentials {
+                    username = project.findProperty("githubUsername") as String? ?: System.getenv("GITHUB_ACTOR")
+                    password = project.findProperty("githubPassword") as String? ?: System.getenv("GITHUB_TOKEN")
+                }
+            }
+        }
+        filter {
+            // Specify which dependencies belong to this repo
+            includeGroup("no.nav.poao-tilgang")
+        }
+    }
+
 }
 
 tasks.withType<Test>().configureEach {

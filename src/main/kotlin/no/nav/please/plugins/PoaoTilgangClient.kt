@@ -10,7 +10,7 @@ typealias EmployeeAzureId = UUID
 typealias PersonalIdentityNumber = String // TODO: Change so it reflects that this should always represent an external user
 typealias VerifyAuthorization = (EmployeeAzureId, PersonalIdentityNumber) -> Boolean
 
-fun Application.configurePoaoTilgangClient(): VerifyAuthorization {
+fun Application.configurePoaoTilgangClient(getMachineToMachineToken: GetMachineToMachineToken): VerifyAuthorization {
 
     val config = this.environment.config
     val poaoTilgangUrl = config.property("poao-tilgang.url").getString()
@@ -19,7 +19,7 @@ fun Application.configurePoaoTilgangClient(): VerifyAuthorization {
     val client: PoaoTilgangClient = PoaoTilgangCachedClient(
         PoaoTilgangHttpClient(
             baseUrl = poaoTilgangUrl,
-            tokenProvider = { "machine-to-machine token" } // TODO: Create token-provider
+            tokenProvider = { getMachineToMachineToken(tokenScope)}
         )
     )
 
