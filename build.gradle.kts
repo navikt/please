@@ -69,6 +69,10 @@ ktor {
 }
 
 dependencies {
+    implementation("io.ktor:ktor-client-okhttp:$ktor_version")
+    implementation("io.ktor:ktor-client-okhttp-jvm:$ktor_version")
+    implementation("io.ktor:ktor-client-auth:$ktor_version")
+
     implementation("io.ktor:ktor-server-call-logging-jvm:2.3.6")
     implementation("io.ktor:ktor-server-call-id-jvm:2.3.6")
     implementation("io.ktor:ktor-server-content-negotiation-jvm:2.3.6")
@@ -89,7 +93,6 @@ dependencies {
     implementation("redis.clients:jedis:$jedis_version")
 
     implementation("no.nav.poao-tilgang:client:$poao_tilgang_version")
-    implementation("no.nav.common:token-client:$nav_token_client_version")
 
     testImplementation("io.kotest:kotest-runner-junit5:$kotest_version")
     testImplementation("io.kotest:kotest-assertions-core:$kotest_version")
