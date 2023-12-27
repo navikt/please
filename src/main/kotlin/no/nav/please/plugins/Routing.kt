@@ -15,7 +15,7 @@ import no.nav.please.varsler.logger
 import no.nav.security.token.support.v2.TokenValidationContextPrincipal
 import java.util.*
 
-fun Application.configureRouting(publishMessage: (message: NyDialogNotification) -> Long, pingRedis: PingRedis, ticketHandler: WsTicketHandler, isAuthorized: isAuthorizedToContactExternalUser) {
+fun Application.configureRouting(publishMessage: (message: NyDialogNotification) -> Long, pingRedis: PingRedis, ticketHandler: WsTicketHandler, navEmployeeIsAuthorized: navEmployeeIsAuthorized) {
     routing {
         route("/isAlive") {
             get {
@@ -45,8 +45,7 @@ fun Application.configureRouting(publishMessage: (message: NyDialogNotification)
                         val externalUserPin = payload.subscriptionKey // TODO: Must be obvious that subscriptionKey is always a PIN?
                         val employeeAzureId = call.getClaim("oid") ?: throw IllegalArgumentException("No oid claim found")
 
-                        val isAuthorized = isAuthorized(UUID.fromString(employeeAzureId), externalUserPin)
-                        if (!isAuthorized) {
+                        if (!navEmployeeIsAuthorized(UUID.fromString(employeeAzureId), externalUserPin)) {
                             call.respond(HttpStatusCode.Forbidden, "Not authorized to send message to the external user")
                             return@post
                         }
