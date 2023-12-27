@@ -1,9 +1,7 @@
 package no.nav.please.plugins
 
 import io.ktor.server.application.*
-import no.nav.poao_tilgang.client.PoaoTilgangCachedClient
-import no.nav.poao_tilgang.client.PoaoTilgangClient
-import no.nav.poao_tilgang.client.PoaoTilgangHttpClient
+import no.nav.poao_tilgang.client.*
 import java.util.*
 
 typealias EmployeeAzureId = UUID
@@ -23,8 +21,13 @@ fun Application.configurePoaoTilgangClient(getMachineToMachineToken: GetMachineT
         )
     )
 
-    // TODO: Implement authorization check
-    return { uuid: EmployeeAzureId, s: PersonalIdentityNumber ->
-        true
+    return { uuid: EmployeeAzureId, externalUserPin: PersonalIdentityNumber ->
+        val decision = client.evaluatePolicy(NavAnsattTilgangTilEksternBrukerPolicyInput(
+            navAnsattAzureId = uuid,
+            tilgangType = TilgangType.SKRIVE, // TODO: Decide on what is the correct permission
+            norskIdent = externalUserPin
+        )).get()
+
+        decision?.isPermit ?: false
     }
 }
