@@ -24,8 +24,10 @@ object DialogNotifier {
         runCatching {
             val event = Json.decodeFromString<DialogHendelse>(messageString)
             val websocketMessage = Json.encodeToString(event.eventType)
+            logger.info("Shall deliver message: ${event.eventType.name}")
 
             WsConnectionHolder.dialogListeners[event.subscriptionKey]
+                ?.also { logger.info("Message candidates: ${it.map { it.subscription.connectionTicket to it.subscription.events }}") }
                 ?.filter { it.subscription.events.contains(event.eventType) }
                 ?.also { if (it.isNotEmpty()) {
                     logger.info("Delivering message to ${it.size} receivers")
@@ -40,7 +42,6 @@ object DialogNotifier {
                         WsConnectionHolder.removeListener(it)
                     }
                 }
-            Thread.sleep(0)
         }.onFailure { error ->
             logger.warn("Failed to notify subscribers", error)
         }

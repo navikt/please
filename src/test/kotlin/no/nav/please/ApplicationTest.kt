@@ -128,17 +128,23 @@ class ApplicationTest : StringSpec({
     }
 
     "should be able to subscribe to selected events" {
+        val person = "123123123"
         val veileder = "Z223123"
-        val subscriptionKey = "123123123"
-        val veiledertoken = client.getWsToken(subscriptionKey, veileder, listOf(EventType.NY_DIALOGMELDING_FRA_BRUKER_TIL_NAV))
+        val onlyBrukerTilNav = client.getWsToken(person, veileder, listOf(EventType.NY_DIALOGMELDING_FRA_BRUKER_TIL_NAV))
+        val veileder2 = "Z223124"
+        val allEvents = client.getWsToken(person, veileder2)
 
         client.webSocket("/ws") {
-            awaitAuthInTest(veiledertoken)
+            awaitAuthInTest(allEvents)
             receiveAfter {
-                client.notifySubscribers(subscriptionKey, EventType.NY_DIALOGMELDING_FRA_NAV_TIL_BRUKER)
-                client.notifySubscribers(subscriptionKey, EventType.NY_DIALOGMELDING_FRA_BRUKER_TIL_NAV)
-            } shouldBe EventType.NY_DIALOGMELDING_FRA_BRUKER_TIL_NAV
-            close(CloseReason(CloseReason.Codes.NORMAL, "Bye"))
+                client.webSocket("/ws") {
+                    awaitAuthInTest(onlyBrukerTilNav)
+                    receiveAfter {
+                        client.notifySubscribers(person, EventType.NY_DIALOGMELDING_FRA_NAV_TIL_BRUKER)
+                        client.notifySubscribers(person, EventType.NY_DIALOGMELDING_FRA_BRUKER_TIL_NAV)
+                    } shouldBe EventType.NY_DIALOGMELDING_FRA_BRUKER_TIL_NAV
+                }
+            } shouldBe EventType.NY_DIALOGMELDING_FRA_NAV_TIL_BRUKER
         }
     }
 
@@ -206,7 +212,7 @@ suspend fun DefaultClientWebSocketSession.receiveAfter(block: suspend () -> Unit
 
 fun getTicketBody(subscriptionKey: String, events: List<EventType>?): String {
     return if (events == null) """{ "subscriptionKey": "$subscriptionKey" }"""
-    else """{ "subscriptionKey": "$subscriptionKey", "events": [${events.joinToString(",")}] }"""
+    else """{ "subscriptionKey": "$subscriptionKey", "events": [${events.map { "\"${it}\"" }.joinToString(",")}] }"""
 }
 
 suspend fun HttpClient.getWsToken(subscriptionKey: String, sub: String, events: List<EventType>? = null) : String {
