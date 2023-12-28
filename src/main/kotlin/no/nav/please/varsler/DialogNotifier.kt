@@ -42,7 +42,6 @@ object DialogNotifier {
                         WsConnectionHolder.removeListener(it)
                     }
                 }
-            Thread.sleep(0)
         }.onFailure { error ->
             logger.warn("Failed to notify subscribers", error)
         }
