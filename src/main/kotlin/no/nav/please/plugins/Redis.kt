@@ -51,6 +51,13 @@ fun Application.configureRedis(): Triple<PublishMessage, PingRedis, TicketStore>
                 if (message == null) return
                 scope.launch { onMessage(message) }
             }
+
+            override fun onUnsubscribe(channel: String?, subscribedChannels: Int) {
+                super.onUnsubscribe(channel, subscribedChannels)
+                log.info("Received unsubscribe")
+                jedisPool.subscribe(this, channel)
+                log.info("Re-subscribed after unsubscribe")
+            }
         }
         jedisPool.subscribe(eventHandler, channel)
     }
