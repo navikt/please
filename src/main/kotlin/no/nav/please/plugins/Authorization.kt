@@ -15,7 +15,7 @@ import java.util.*
 
 typealias NavEmployeeIsAuthorized = suspend (employeeAzureId: UUID, externalUserIdentityNumber: String) -> Boolean // TODO: Få typesatt på annet vis en typealias
 
-fun Application.configureAuthorization(httpClient: HttpClient, getMachineToMachineToken: (String) -> String): NavEmployeeIsAuthorized {
+fun Application.configureAuthorization(httpClient: HttpClient, getMachineToMachineToken: suspend (String) -> String): NavEmployeeIsAuthorized {
 
     val poaoTilgangBaseUrl = this.environment.config.property("poao-tilgang.url").getString()
     val poaoTilgangScope = this.environment.config.property("poao-tilgang.scope").getString()
