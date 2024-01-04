@@ -94,7 +94,7 @@ dependencies {
     implementation("no.nav.security:token-validation-ktor-v2:$tokensupport_version")
     implementation("redis.clients:jedis:$jedis_version")
 
-    implementation("no.nav.poao-tilgang:client:$poao_tilgang_version")
+    implementation("no.nav.poao-tilgang:api:$poao_tilgang_version")
 
     testImplementation("io.kotest:kotest-runner-junit5:$kotest_version")
     testImplementation("io.kotest:kotest-assertions-core:$kotest_version")

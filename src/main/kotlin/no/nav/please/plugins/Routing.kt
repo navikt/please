@@ -15,7 +15,7 @@ import no.nav.please.varsler.logger
 import no.nav.security.token.support.v2.TokenValidationContextPrincipal
 import java.util.*
 
-fun Application.configureRouting(publishMessage: (message: NyDialogNotification) -> Long, pingRedis: PingRedis, ticketHandler: WsTicketHandler, navEmployeeIsAuthorized: navEmployeeIsAuthorized) {
+fun Application.configureRouting(publishMessage: (message: NyDialogNotification) -> Long, pingRedis: PingRedis, ticketHandler: WsTicketHandler, navEmployeeIsAuthorized: NavEmployeeIsAuthorized) {
     routing {
         route("/isAlive") {
             get {
