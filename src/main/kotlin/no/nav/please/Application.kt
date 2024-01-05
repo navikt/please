@@ -3,6 +3,7 @@ package no.nav.please
 import io.ktor.server.application.*
 import io.ktor.server.netty.*
 import no.nav.please.plugins.*
+import no.nav.please.plugins.redis.configureRedis
 import no.nav.please.varsler.WsTicketHandler
 import org.slf4j.LoggerFactory
 

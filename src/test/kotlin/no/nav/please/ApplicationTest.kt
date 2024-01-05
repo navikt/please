@@ -44,9 +44,9 @@ class ApplicationTest : StringSpec({
     }
     afterSpec {
         testApp.stop()
-        redisServer.stop()
         IncomingDialogMessageFlow.stop()
         server.shutdown()
+        redisServer.stop()
     }
 
     "should notify subscribers" {

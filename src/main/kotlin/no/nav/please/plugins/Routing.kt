@@ -9,6 +9,7 @@ import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import kotlinx.serialization.Serializable
+import no.nav.please.plugins.redis.PingRedis
 import no.nav.please.varsler.EventType
 import no.nav.please.varsler.TicketRequest
 import no.nav.please.varsler.logger

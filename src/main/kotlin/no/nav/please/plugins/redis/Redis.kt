@@ -1,4 +1,4 @@
-package no.nav.please.plugins
+package no.nav.please.plugins.redis
 
 import io.ktor.server.application.*
 import kotlinx.coroutines.CoroutineScope
@@ -8,9 +8,11 @@ import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import no.nav.please.plugins.NyDialogNotification
 import no.nav.please.varsler.*
 import org.slf4j.LoggerFactory
 import redis.clients.jedis.*
+import redis.clients.jedis.Protocol.Command
 
 typealias PublishMessage = (NyDialogNotification) -> Long
 typealias PingRedis = () -> String
@@ -72,24 +74,14 @@ fun Application.configureRedis(): Triple<PublishMessage, PingRedis, TicketStore>
         log.info("Published to $numReceivers")
         numReceivers
     }
+
     val pingRedis: PingRedis = {
+        val result = jedisPool.sendCommand(Command.PUBSUB, Protocol.Keyword.NUMSUB.name, channel)
+            .toString()
+            .toIntOrNull()
+        log.info("Subscribers to channel: $result")
         jedisPool.ping()
     }
 
     return Triple(publishMessage, pingRedis, RedisTicketStore(jedisPool))
-}
-
-class RedisTicketStore(val jedis: JedisPooled): TicketStore {
-    override fun getSubscription(ticket: WellFormedTicket): Subscription? {
-        return jedis[ticket.value]?.let { Json.decodeFromString<Subscription>(it) }
-    }
-
-    override fun addSubscription(ticket: WellFormedTicket, subscription: Subscription) {
-        jedis.setex(ticket.value, 3600*6, Json.encodeToString(subscription))
-    }
-
-    override fun removeSubscription(ticket: WellFormedTicket) {
-        jedis.del(ticket.value)
-    }
-
 }
