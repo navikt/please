@@ -76,10 +76,8 @@ fun Application.configureRedis(): Triple<PublishMessage, PingRedis, TicketStore>
     }
 
     val pingRedis: PingRedis = {
-        val result = jedisPool.sendCommand(Command.PUBSUB, Protocol.Keyword.NUMSUB.name, channel)
-            .toString()
-            .toIntOrNull()
-        log.info("Subscribers to channel: $result")
+        val result = jedisPool.sendCommand(Command.PUBSUB, Protocol.Keyword.NUMSUB.name, channel) as ArrayList<*>
+        log.info("Subscribers to channel: ${result[1]}")
         jedisPool.ping()
     }
 

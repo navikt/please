@@ -83,6 +83,10 @@ class ApplicationTest : StringSpec({
 
     }
 
+    "should ping redis" {
+        client.get("/isAlive")
+    }
+
     "WsConnectionHolder should count correctly" {
         val veileder1 = "Z123123"
         val subscriptionKey1 = "12345678910"
