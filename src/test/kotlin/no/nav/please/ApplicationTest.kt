@@ -1,5 +1,8 @@
 package no.nav.please
 
+import com.github.tomakehurst.wiremock.WireMockServer
+import com.github.tomakehurst.wiremock.client.ResponseDefinitionBuilder
+import com.github.tomakehurst.wiremock.client.WireMock
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
@@ -31,6 +34,9 @@ class ApplicationTest : StringSpec({
     lateinit var redisServer: RedisServer
     lateinit var testApp: TestApplication
     lateinit var client: HttpClient
+
+    val wiremock = WireMockServer(9000)
+
     beforeSpec {
         testApp = TestApplication {
             environment { doConfig() }
@@ -41,12 +47,15 @@ class ApplicationTest : StringSpec({
         }
         redisServer = RedisServer(6379)
         redisServer.start()
+        wiremock.start()
+        mockAzureAdMachineTokenRequest(wiremock)
     }
     afterSpec {
         testApp.stop()
         redisServer.stop()
         IncomingDialogMessageFlow.stop()
         server.shutdown()
+        wiremock.stop()
     }
 
     "should notify subscribers" {
@@ -183,8 +192,13 @@ class ApplicationTest : StringSpec({
                 "no.nav.security.jwt.issuers.0.discoveryurl" to "${server.wellKnownUrl(acceptedIssuer)}",
                 "no.nav.security.jwt.issuers.0.accepted_audience" to acceptedAudience,
                 "topic.ny-dialog" to testTopic,
-                "redis.host" to "rediss://localhost:6379",
-                "redis.channel" to "dab.dialog-events-v1"
+                "redis.host" to "redis://localhost:6379",
+                "redis.channel" to "dab.dialog-events-v1",
+                "poao-tilgang.url" to "http://app.namespace.svc.cluster.local",
+                "poao-tilgang.scope" to "api://cluster.namespace.app/.default",
+                "azure.client-id" to "clientId",
+                "azure.token-endpoint" to "tokenEndpoint",
+                "azure.client-secret" to "clientSecret"
             )
         }
     }
@@ -232,4 +246,14 @@ suspend fun HttpClient.notifySubscribers(subscriptionKey: String, eventType: Eve
         contentType(ContentType.Application.Json)
         setBody("""{ "subscriptionKey": "$subscriptionKey", "eventType": "${eventType.name}" }""")
     }.status shouldBe HttpStatusCode.OK
+}
+
+fun mockAzureAdMachineTokenRequest(wireMockServer: WireMockServer) {
+    wireMockServer.stubFor(
+        WireMock
+            .post(WireMock.urlMatching("tokenEndpoint"))
+            .willReturn(ResponseDefinitionBuilder.okForJson("""
+                {"access_token": "shiningToken", "expires_in": 10}
+            """.trimIndent()))
+    )
 }

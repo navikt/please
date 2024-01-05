@@ -57,3 +57,12 @@ spec:
         - application: veilarbpersonflate
           namespace: poao
           cluster: prod-gcp
+    outbound:
+      rules:
+        - application: poao-tilgang
+          namespace: poao
+  env:
+    - name: POAO_TILGANG_CLIENT_URL
+      value: http://poao-tilgang.poao.svc.cluster.local
+    - name: POAO_TILGANG_SCOPE
+      value: api://prod-gcp.poao.poao-tilgang/.default

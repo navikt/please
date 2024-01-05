@@ -19,8 +19,11 @@ fun Application.module() {
     configureMonitoring()
     configureMicrometer()
     configureSerialization()
+    val httpClient = machineToMachineClient()
+    val machineTokenProvider = MachineToMachineTokenProvider(this.environment.config)
+    val verifyAuthorization = configureAuthorization(httpClient, machineTokenProvider::getAccessToken)
     val (publishMessage, pingRedis, ticketStore) = configureRedis()
     val ticketHandler = WsTicketHandler(ticketStore)
     configureSockets(ticketHandler)
-    configureRouting(publishMessage, pingRedis, ticketHandler)
+    configureRouting(publishMessage, pingRedis, ticketHandler, verifyAuthorization)
 }
