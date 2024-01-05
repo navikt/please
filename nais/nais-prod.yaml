@@ -64,5 +64,5 @@ spec:
   env:
     - name: POAO_TILGANG_CLIENT_URL
       value: http://poao-tilgang.poao.svc.cluster.local
-    - name: POAO_TILGANG_CLIENT_SCOPE
+    - name: POAO_TILGANG_SCOPE
       value: api://prod-gcp.poao.poao-tilgang/.default
