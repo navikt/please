@@ -3,6 +3,7 @@ package no.nav.please
 import com.github.tomakehurst.wiremock.WireMockServer
 import com.github.tomakehurst.wiremock.client.ResponseDefinitionBuilder
 import com.github.tomakehurst.wiremock.client.WireMock
+import com.github.tomakehurst.wiremock.client.WireMock.aResponse
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
@@ -65,8 +66,8 @@ class ApplicationTest : StringSpec({
         val veileder2 = "Z321321"
         val subscriptionKey2 = "11111178910"
 
-        val veileder1token = client.getWsToken(subscriptionKey1, veileder1)
-        val veileder2token = client.getWsToken(subscriptionKey2, veileder2)
+        val veileder1token = client.getWsToken(subscriptionKey1, getAzureToken(veileder1))
+        val veileder2token = client.getWsToken(subscriptionKey2, getAzureToken(veileder2))
 
         WsConnectionHolder.dialogListeners.values.sumOf { it.size } shouldBe 0
 
@@ -96,7 +97,7 @@ class ApplicationTest : StringSpec({
         val veileder1 = "Z123123"
         val subscriptionKey1 = "12345678910"
         val countBefore = WsConnectionHolder.dialogListeners.values.sumOf { it.size }
-        val veileder1token = client.getWsToken(subscriptionKey1, veileder1)
+        val veileder1token = client.getWsToken(subscriptionKey1, getAzureToken(veileder1))
         client.webSocket("/ws") {
             awaitAuthInTest(veileder1token)
             WsConnectionHolder.dialogListeners.values.sumOf { it.size } shouldBe countBefore + 1
@@ -113,7 +114,7 @@ class ApplicationTest : StringSpec({
     "should reestablish websocket and reuse subscription" {
         val veileder1 = "Z123123"
         val subscriptionKey1 = "12345678911"
-        val veileder1token = client.getWsToken(subscriptionKey1, veileder1)
+        val veileder1token = client.getWsToken(subscriptionKey1, getAzureToken(veileder1))
 
         client.webSocket("/ws") {
             awaitAuthInTest(veileder1token)
@@ -139,7 +140,7 @@ class ApplicationTest : StringSpec({
     "should be able to subscribe to selected events" {
         val veileder = "Z223123"
         val subscriptionKey = "123123123"
-        val veiledertoken = client.getWsToken(subscriptionKey, veileder, listOf(EventType.NY_DIALOGMELDING_FRA_BRUKER_TIL_NAV))
+        val veiledertoken = client.getWsToken(subscriptionKey, getAzureToken(veileder), listOf(EventType.NY_DIALOGMELDING_FRA_BRUKER_TIL_NAV))
 
         client.webSocket("/ws") {
             awaitAuthInTest(veiledertoken)
@@ -154,7 +155,7 @@ class ApplicationTest : StringSpec({
     "should fail on invalid subscription" {
         val veileder = "Z123123"
         val subscriptionKey = "12345678911"
-        val token = client.getWsToken(subscriptionKey, veileder)
+        val token = client.getWsToken(subscriptionKey, getAzureToken(veileder))
         client.webSocket("/ws") {
             send(Frame.Text("LOL"))
             (incoming.receive() as Frame.Text).readText() shouldBe SocketResponse.INVALID_TOKEN.name
@@ -191,7 +192,7 @@ class ApplicationTest : StringSpec({
                 "poao-tilgang.url" to "http://app.namespace.svc.cluster.local",
                 "poao-tilgang.scope" to "api://cluster.namespace.app/.default",
                 "azure.client-id" to "clientId",
-                "azure.token-endpoint" to "tokenEndpoint",
+                "azure.token-endpoint" to "http://localhost:9000/tokenEndpoint",
                 "azure.client-secret" to "clientSecret"
             )
         }
@@ -223,9 +224,11 @@ fun getTicketBody(subscriptionKey: String, events: List<EventType>?): String {
     else """{ "subscriptionKey": "$subscriptionKey", "events": [${events.joinToString(",")}] }"""
 }
 
-suspend fun HttpClient.getWsToken(subscriptionKey: String, sub: String, events: List<EventType>? = null) : String {
+fun getAzureToken(navIdent: String) = ApplicationTest.server.issueToken(subject = navIdent, claims = mapOf("NAVident" to navIdent, "oid" to UUID.randomUUID())).serialize()
+
+suspend fun HttpClient.getWsToken(subscriptionKey: String, accessToken: String, events: List<EventType>? = null) : String {
     val authToken = this.post("/ws-auth-ticket") {
-        bearerAuth(ApplicationTest.server.issueToken(subject = sub).serialize())
+        bearerAuth(accessToken)
         contentType(ContentType.Application.Json)
         setBody(getTicketBody(subscriptionKey, events))
     }.bodyAsText()
@@ -245,9 +248,10 @@ suspend fun HttpClient.notifySubscribers(subscriptionKey: String, eventType: Eve
 fun mockAzureAdMachineTokenRequest(wireMockServer: WireMockServer) {
     wireMockServer.stubFor(
         WireMock
-            .post(WireMock.urlMatching("tokenEndpoint"))
-            .willReturn(ResponseDefinitionBuilder.okForJson("""
-                {"access_token": "shiningToken", "expires_in": 10}
-            """.trimIndent()))
+            .post(WireMock.urlEqualTo("/tokenEndpoint"))
+            .willReturn(aResponse()
+                .withHeader("Content-Type", "application/json")
+                .withBody("""{ "access_token": "shiningToken", "expires_in": 10 }""")
+            )
     )
 }

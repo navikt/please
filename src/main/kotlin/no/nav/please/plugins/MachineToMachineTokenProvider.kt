@@ -1,7 +1,5 @@
 package no.nav.please.plugins
 
-import com.fasterxml.jackson.annotation.JsonFormat
-import com.fasterxml.jackson.databind.DeserializationFeature
 import io.ktor.client.*
 import io.ktor.client.call.*
 import io.ktor.client.engine.okhttp.*
@@ -9,8 +7,10 @@ import io.ktor.client.plugins.contentnegotiation.*
 import io.ktor.client.request.*
 import io.ktor.client.request.forms.*
 import io.ktor.http.*
-import io.ktor.serialization.jackson.*
+import io.ktor.serialization.kotlinx.json.*
 import io.ktor.server.config.*
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
 import no.nav.please.varsler.logger
 import java.time.LocalDateTime
 
@@ -28,9 +28,7 @@ class MachineToMachineTokenProvider(config: ApplicationConfig) {
             }
         }
         install(ContentNegotiation) {
-            jackson {
-                this.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
-            }
+            json()
         }
     }
 
@@ -81,9 +79,10 @@ private data class AccessToken(
     }
 }
 
+@Serializable
 private data class TokenResponse(
-    @JsonFormat(pattern = "access_token")
+    @SerialName("access_token")
     val accessToken: String,
-    @JsonFormat(pattern = "expires_in")
+    @SerialName("expires_in")
     val expiresIn: Long,
 )
