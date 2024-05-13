@@ -1,7 +1,6 @@
 package no.nav.please
 
 import io.kotest.core.spec.style.StringSpec
-import io.kotest.matchers.ints.shouldBeExactly
 import no.nav.please.varsler.DialogNotifier
 
 class DialogNotifierTest : StringSpec({
@@ -12,9 +11,4 @@ class DialogNotifierTest : StringSpec({
         val record = messageToSend
         DialogNotifier.notifySubscribers(record)
     }
-
-    "shall fail to test deploy feature" {
-        3 shouldBeExactly 2
-    }
-
 })
