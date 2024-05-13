@@ -7,6 +7,8 @@ on:
     secrets:
       NAIS_DEPLOY_APIKEY:
         required: true
+      SLACK_WEBHOOK:
+        required: true
 
 env:
   IMAGE_TAG: ${{ github.sha }}

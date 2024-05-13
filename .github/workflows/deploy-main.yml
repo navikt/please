@@ -26,3 +26,4 @@ jobs:
       env: prod
     secrets:
       NAIS_DEPLOY_APIKEY: ${{ secrets.NAIS_DEPLOY_APIKEY }}
+      SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
