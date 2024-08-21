@@ -54,6 +54,9 @@ spec:
         - application: veilarbdialog
           namespace: pto
           cluster: prod-fss
+        - application: veilarbdialog
+          namespace: dab
+          cluster: prod-gcp
         - application: veilarbpersonflate
           namespace: poao
           cluster: prod-gcp
