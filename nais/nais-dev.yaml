@@ -39,6 +39,10 @@ spec:
     requests:
       cpu: 200m
       memory: 768Mi
+  observability:
+    autoInstrumentation:
+      enabled: true
+      runtime: java
   tokenx:
     enabled: true
   azure:
