@@ -49,7 +49,7 @@ class ApplicationTest : StringSpec({
         server.shutdown()
     }
 
-    "should notify subscribers" {
+    "should notify subscribers on new dialog-message" {
         val veileder1 = "Z123123"
         val subscriptionKey1 = "12345678910"
 

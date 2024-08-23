@@ -55,4 +55,5 @@ fun Application.configureSockets(ticketHandler: WsTicketHandler) {
 enum class SocketResponse {
     AUTHENTICATED,
     INVALID_TOKEN,
+    FAILED_TO_CONSUME_AUTH_TICKET,
 }

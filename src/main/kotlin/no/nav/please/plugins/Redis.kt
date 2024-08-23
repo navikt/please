@@ -1,5 +1,8 @@
 package no.nav.please.plugins
 
+import arrow.core.Either
+import arrow.core.left
+import arrow.core.right
 import io.ktor.server.application.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -77,19 +80,4 @@ fun Application.configureRedis(): Triple<PublishMessage, PingRedis, TicketStore>
     }
 
     return Triple(publishMessage, pingRedis, RedisTicketStore(jedisPool))
-}
-
-class RedisTicketStore(val jedis: JedisPooled): TicketStore {
-    override fun getSubscription(ticket: WellFormedTicket): Subscription? {
-        return jedis[ticket.value]?.let { Json.decodeFromString<Subscription>(it) }
-    }
-
-    override fun addSubscription(ticket: WellFormedTicket, subscription: Subscription) {
-        jedis.setex(ticket.value, 3600*6, Json.encodeToString(subscription))
-    }
-
-    override fun removeSubscription(ticket: WellFormedTicket) {
-        jedis.del(ticket.value)
-    }
-
 }

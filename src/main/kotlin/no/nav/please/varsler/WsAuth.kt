@@ -1,11 +1,13 @@
 package no.nav.please.varsler
 
+import arrow.core.raise.either
 import io.ktor.server.websocket.*
 import io.ktor.websocket.*
 import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.flow.*
 import no.nav.please.plugins.SocketResponse
 import org.slf4j.LoggerFactory
+import redis.clients.jedis.exceptions.JedisException
 
 val logger = LoggerFactory.getLogger("no.nav.please.varsler.WsAuth.kt")
 
@@ -29,20 +31,40 @@ sealed class AuthResult {
     data object Failed: AuthResult()
 }
 
+sealed interface TicketAuthError
+sealed interface AuthFailedTechnicalError
+data object AuthFailedInvalidTicketError : TicketAuthError
+data class AuthFailedTicketNotFound(val ticket: WellFormedTicket) : TicketAuthError
+data class AuthFailedRedisError(val jedisError: JedisException) : TicketAuthError, AuthFailedTechnicalError
+data class AuthFailedUnknownError(val error: Throwable) : TicketAuthError, AuthFailedTechnicalError
+fun ConsumeTicketError.toTicketAuthError(): TicketAuthError = when (this) {
+    is TicketHandlerRedisError -> AuthFailedRedisError(this.jedisError)
+    is TicketHandlerSubscriptionNotFoundError -> AuthFailedTicketNotFound(this.ticket)
+    is TicketHandlerUnknownError -> AuthFailedUnknownError(this.error)
+}
+
 suspend fun DefaultWebSocketServerSession.tryAuthenticateWithMessage(frame: Frame, ticketHandler: WsTicketHandler): AuthResult {
     try {
         logger.info("Received ticket, trying to authenticate $frame")
         if (frame !is Frame.Text) return AuthResult.Failed
-        val connectionTicket = ConnectionTicket.of(frame.readText())
-            .let { if (it is WellFormedTicket) ticketHandler.consumeTicket(it) else it }
-
-        return when (connectionTicket) {
-            is ValidatedTicket -> AuthResult.Success(connectionTicket.subscription)
-            else -> {
-                send(SocketResponse.INVALID_TOKEN.name)
+        val text = frame.readText()
+        return either {
+            val ticket = ConnectionTicket.of(text)
+                .mapLeft { AuthFailedInvalidTicketError }.bind()
+            ticketHandler.consumeTicket(ticket)
+                .mapLeft { it.toTicketAuthError() }.bind()
+        }.fold({
+                val response: SocketResponse = when (it) {
+                    is AuthFailedTechnicalError -> SocketResponse.FAILED_TO_CONSUME_AUTH_TICKET
+                    is AuthFailedTicketNotFound -> SocketResponse.INVALID_TOKEN // Don't tell client if ticket exists or not
+                    is AuthFailedInvalidTicketError -> SocketResponse.INVALID_TOKEN
+                }
+                send(response.name)
                 AuthResult.Failed
-            }
-        }
+            },
+            {
+                AuthResult.Success(it.subscription)
+            })
     } catch (e: Throwable) {
         logger.warn("Failed to handle auth ticket", e)
         return AuthResult.Failed

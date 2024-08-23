@@ -44,8 +44,12 @@ fun Application.configureRouting(publishMessage: (message: NyDialogNotification)
                             ?.context?.anyValidClaims?.get()?.get("sub")?.toString() ?: throw IllegalArgumentException(
                             "No subject claim found")
                         val payload = call.receive<TicketRequest>()
-                        val ticket = ticketHandler.generateTicket(subject, payload)
-                        call.respondText(ticket.value)
+                        ticketHandler.generateTicket(subject, payload)
+                            .fold({ error ->
+                                call.respond(HttpStatusCode.InternalServerError, "Internal error")
+                            }, { ticket ->
+                                call.respondText(ticket.value)
+                            })
                     } catch (e: CannotTransformContentToTypeException) {
                         call.respond(HttpStatusCode.BadRequest, "Invalid payload")
                     }
