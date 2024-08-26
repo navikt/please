@@ -13,6 +13,7 @@ import no.nav.please.varsler.WsListener
 import no.nav.please.varsler.WsTicketHandler
 import no.nav.please.varsler.awaitAuthentication
 import org.slf4j.LoggerFactory
+import java.io.IOException
 import java.time.Duration
 
 fun Application.configureSockets(ticketHandler: WsTicketHandler) {
@@ -55,4 +56,5 @@ fun Application.configureSockets(ticketHandler: WsTicketHandler) {
 enum class SocketResponse {
     AUTHENTICATED,
     INVALID_TOKEN,
+    FAILED_TO_CONSUME_AUTH_TICKET,
 }

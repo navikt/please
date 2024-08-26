@@ -9,6 +9,7 @@ val kotest_version: String by project
 val prometheus_version: String by project
 val logstash_encoder_version: String by project
 val jedis_version: String by project
+val arrow_version: String by project
 
 plugins {
     kotlin("jvm") version "1.9.10"
@@ -78,6 +79,9 @@ dependencies {
     implementation("io.ktor:ktor-server-config-yaml:$ktor_version")
     implementation("io.ktor:ktor-server-metrics-micrometer:$ktor_version")
     implementation("io.micrometer:micrometer-registry-prometheus:$prometheus_version")
+    implementation("io.arrow-kt:arrow-core:$arrow_version")
+    implementation("io.arrow-kt:arrow-fx-coroutines:$arrow_version")
+    implementation("io.arrow-kt:arrow-resilience-jvm:$arrow_version")
 
     implementation("net.logstash.logback:logstash-logback-encoder:$logstash_encoder_version")
 
