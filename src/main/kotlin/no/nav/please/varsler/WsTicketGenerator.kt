@@ -6,6 +6,7 @@ import arrow.core.left
 import arrow.core.raise.either
 import arrow.core.right
 import kotlinx.serialization.Serializable
+import no.nav.please.errorUtil.LoggableError
 import no.nav.please.plugins.*
 import redis.clients.jedis.exceptions.JedisException
 import java.util.*
@@ -30,40 +31,50 @@ class ValidatedTicket(val value: String, val subscription: Subscription): Connec
 data object InvalidTicket: ConnectionTicket()
 
 interface TicketStore {
-    fun getSubscription(ticket: WellFormedTicket): Either<GetSubscriptionError, Subscription>
-    fun addSubscription(token: WellFormedTicket, ticket: Subscription): Either<TicketStoreError, Unit>
-    fun removeSubscription(ticket: WellFormedTicket): Either<TicketStoreError, Unit>
+    suspend fun getSubscription(ticket: WellFormedTicket): Either<GetSubscriptionError, Subscription>
+    suspend fun addSubscription(token: WellFormedTicket, ticket: Subscription): Either<TicketStoreError, Unit>
+    suspend fun removeSubscription(ticket: WellFormedTicket): Either<TicketStoreError, Unit>
 }
 
 sealed interface ConsumeTicketError
 class TicketHandlerSubscriptionNotFoundError(val ticket: WellFormedTicket) : ConsumeTicketError
-class TicketHandlerRedisError(val jedisError: JedisException) : ConsumeTicketError, GenerateTicketError
-class TicketHandlerUnknownError(val error: Throwable) : ConsumeTicketError, GenerateTicketError
-fun GetSubscriptionError.toConsumeTicketError(): ConsumeTicketError {
-    return when (this) {
-        is SubscriptionNotFoundError -> TicketHandlerSubscriptionNotFoundError(this.ticket)
-        is JedisTicketStoreError -> TicketHandlerRedisError(this.jedisError)
-        is UknownTicketStoreError -> TicketHandlerUnknownError(this.error)
+class TicketHandlerRedisError(val operationDescription: String, val jedisError: JedisException) : ConsumeTicketError, GenerateTicketError {
+    override fun log() {
+        logger.error("Failed to generateTicket ($operationDescription) because of redis error", jedisError)
     }
 }
 
-sealed interface GenerateTicketError
+class TicketHandlerUnknownError(val operationDescription: String, val error: Throwable) : ConsumeTicketError, GenerateTicketError {
+    override fun log() {
+        logger.error("Failed to generateTicket ($operationDescription) because of unknown error", error)
+    }
+}
+
+fun GetSubscriptionError.toConsumeTicketError(): ConsumeTicketError {
+    return when (this) {
+        is SubscriptionNotFoundError -> TicketHandlerSubscriptionNotFoundError(this.ticket)
+        is JedisTicketStoreError -> TicketHandlerRedisError(this.operationDescription, this.jedisError)
+        is UknownTicketStoreError -> TicketHandlerUnknownError(this.operationDescription, this.error)
+    }
+}
+
+sealed interface GenerateTicketError: LoggableError
 fun TicketStoreError.toGenerateTicketError(): GenerateTicketError {
     return when (this) {
-        is JedisTicketStoreError -> TicketHandlerRedisError(this.jedisError)
-        is UknownTicketStoreError -> TicketHandlerUnknownError(this.error)
+        is JedisTicketStoreError -> TicketHandlerRedisError(this.operationDescription, this.jedisError)
+        is UknownTicketStoreError -> TicketHandlerUnknownError(this.operationDescription, this.error)
     }
 }
 
 class WsTicketHandler(private val ticketStore: TicketStore) {
     // TODO: Only allow 1 ticket per sub
-    fun consumeTicket(ticket: WellFormedTicket): Either<ConsumeTicketError, ValidatedTicket> {
+    suspend fun consumeTicket(ticket: WellFormedTicket): Either<ConsumeTicketError, ValidatedTicket> {
         return either {
             val subscription = ticketStore.getSubscription(ticket).bind()
             ValidatedTicket(ticket.value, subscription)
         }.mapLeft { it.toConsumeTicketError() }
     }
-    fun generateTicket(subject: String, payload: TicketRequest): Either<GenerateTicketError, WellFormedTicket> {
+    suspend fun generateTicket(subject: String, payload: TicketRequest): Either<GenerateTicketError, WellFormedTicket> {
         return either {
             val ticket = WellFormedTicket(UUID.randomUUID().toString())
             val subscription = Subscription(subject ,ticket.value, payload.subscriptionKey, payload.events ?: EventType.entries)

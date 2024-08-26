@@ -81,6 +81,7 @@ dependencies {
     implementation("io.micrometer:micrometer-registry-prometheus:$prometheus_version")
     implementation("io.arrow-kt:arrow-core:$arrow_version")
     implementation("io.arrow-kt:arrow-fx-coroutines:$arrow_version")
+    implementation("io.arrow-kt:arrow-resilience-jvm:$arrow_version")
 
     implementation("net.logstash.logback:logstash-logback-encoder:$logstash_encoder_version")
 

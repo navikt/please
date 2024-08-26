@@ -1,8 +1,6 @@
 package no.nav.please.plugins
 
 import arrow.core.Either
-import arrow.core.left
-import arrow.core.right
 import io.ktor.server.application.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -11,11 +9,13 @@ import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import no.nav.please.retry.MaxRetryError
+import no.nav.please.retry.Retry
 import no.nav.please.varsler.*
 import org.slf4j.LoggerFactory
 import redis.clients.jedis.*
 
-typealias PublishMessage = (NyDialogNotification) -> Long
+typealias PublishMessage = suspend (NyDialogNotification) -> Either<MaxRetryError, Long>
 typealias PingRedis = () -> String
 fun Application.configureRedis(): Triple<PublishMessage, PingRedis, TicketStore> {
     val logger = LoggerFactory.getLogger(Application::class.java)
@@ -71,9 +71,11 @@ fun Application.configureRedis(): Triple<PublishMessage, PingRedis, TicketStore>
 
     val publishMessage: PublishMessage = { message: NyDialogNotification ->
         logger.info("Publishing messages")
-        val numReceivers = jedisPool.publish(channel, Json.encodeToString(message))
-        log.info("Published to $numReceivers")
-        numReceivers
+        Retry.withRetry {
+            jedisPool.publish(channel, Json.encodeToString(message))
+        }
+            .onLeft { log.error("Failed to publish message to redis", it.latestException) }
+            .onRight { numReceivers -> log.info("Published to $numReceivers") }
     }
     val pingRedis: PingRedis = {
         jedisPool.ping()
