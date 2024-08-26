@@ -6,6 +6,7 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.Serializable
 import no.nav.please.plugins.Metrics
 import java.util.*
+import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicInteger
 
 typealias SubscriptionKey = String
@@ -25,7 +26,7 @@ data class WsListener(
 )
 
 object WsConnectionHolder {
-    val dialogListeners = Collections.synchronizedMap(mutableMapOf<SubscriptionKey, List<WsListener>>())
+    val dialogListeners = ConcurrentHashMap<SubscriptionKey, List<WsListener>>()
     val numConnectionMetric: AtomicInteger = Metrics.registry.gauge(
         "active_websocket_connections",
         AtomicInteger(0)
