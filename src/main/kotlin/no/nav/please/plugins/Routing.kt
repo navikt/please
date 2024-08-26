@@ -34,8 +34,8 @@ fun Application.configureRouting(publishMessage: suspend (message: NyDialogNotif
         authenticate("AzureOrTokenX") {
             post("/notify-subscribers") {
                 val dialogNotification = call.receive<NyDialogNotification>()
-                publishMessage(dialogNotification)
                 call.respond(status = HttpStatusCode.OK, message = "")
+                publishMessage(dialogNotification)
             }
 
             post("/ws-auth-ticket") {
