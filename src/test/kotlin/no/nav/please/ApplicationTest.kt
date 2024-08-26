@@ -44,9 +44,9 @@ class ApplicationTest : StringSpec({
     }
     afterSpec {
         testApp.stop()
-        redisServer.stop()
         IncomingDialogMessageFlow.stop()
         server.shutdown()
+        redisServer.stop()
     }
 
     "should notify subscribers" {
@@ -81,6 +81,10 @@ class ApplicationTest : StringSpec({
             close(CloseReason(CloseReason.Codes.NORMAL, "Bye"))
         }
 
+    }
+
+    "should ping redis" {
+        client.get("/isAlive")
     }
 
     "WsConnectionHolder should count correctly" {
