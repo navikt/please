@@ -48,7 +48,7 @@ fun Application.configureSockets(ticketHandler: WsTicketHandler) {
                 logger.warn("IOException: ${e.message}", e)
                 closeExceptionally(e)
             } catch (e: Throwable) {
-                logger.warn("onError", e)
+                logger.warn("unhandled error: ${e.message}", e)
                 closeExceptionally(e)
             } finally {
                 wsListener?.let { removeListener(it) }
