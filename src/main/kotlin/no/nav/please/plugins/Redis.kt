@@ -16,7 +16,7 @@ import org.slf4j.LoggerFactory
 import redis.clients.jedis.*
 
 typealias PublishMessage = suspend (NyDialogNotification) -> Either<MaxRetryError, Long>
-typealias PingRedis = () -> String
+typealias PingRedis = suspend () -> Either<MaxRetryError, String>
 fun Application.configureRedis(): Triple<PublishMessage, PingRedis, TicketStore> {
     val logger = LoggerFactory.getLogger(Application::class.java)
 
@@ -78,7 +78,9 @@ fun Application.configureRedis(): Triple<PublishMessage, PingRedis, TicketStore>
             .onRight { numReceivers -> log.info("Published to $numReceivers") }
     }
     val pingRedis: PingRedis = {
-        jedisPool.ping()
+        Retry.withRetry {
+            jedisPool.ping()
+        }
     }
 
     return Triple(publishMessage, pingRedis, RedisTicketStore(jedisPool))

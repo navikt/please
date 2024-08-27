@@ -21,14 +21,23 @@ fun Application.configureRouting(publishMessage: suspend (message: NyDialogNotif
         route("/isAlive") {
             get {
                 val redisStatus = pingRedis()
-                require(redisStatus == "PONG") { "Redis returnerer $redisStatus fra ping()" }
-                call.respond(HttpStatusCode.OK)
+                    .fold({
+                        logger.warn("Failed to ping redis in isAlive")
+                        call.respond(HttpStatusCode.InternalServerError)
+                    }, { redisStatus ->
+                        require(redisStatus == "PONG") { "Redis returnerer $redisStatus fra ping()" }
+                        call.respond(HttpStatusCode.OK)
+                    })
             }
         }
         route("/isReady") {
             get {
                 pingRedis()
-                call.respond(HttpStatusCode.OK)
+                    .fold({
+                        call.respond(HttpStatusCode.InternalServerError)
+                    }, {
+                        call.respond(HttpStatusCode.OK)
+                    })
             }
         }
         authenticate("AzureOrTokenX") {
