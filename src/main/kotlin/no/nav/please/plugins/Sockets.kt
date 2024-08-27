@@ -1,5 +1,6 @@
 package no.nav.please.plugins
 
+import arrow.core.raise.catch
 import no.nav.please.varsler.WsConnectionHolder.addListener
 import no.nav.please.varsler.WsConnectionHolder.removeListener
 import io.ktor.server.application.*
@@ -40,11 +41,14 @@ fun Application.configureSockets(ticketHandler: WsTicketHandler) {
                     logger.info("Received unexpected message: ${message}, Sec-WebSocket-Key: $wsSocketKey")
                 }
             } catch (e: ClosedReceiveChannelException) {
-                logger.info("onClose, Sec-WebSocket-Key: $wsSocketKey, ${closeReason.await()}")
+                logger.info("onClose ${closeReason.await()}")
             } catch (e: ClientClosedException) {
-                logger.info("${e.message}, Sec-WebSocket-Key: $wsSocketKey, ${closeReason.await()}")
+                logger.info("${e.message}, ${closeReason.await()}")
+            } catch (e: IOException)  {
+                logger.warn("IOException: ${e.message}", e)
+                closeExceptionally(e)
             } catch (e: Throwable) {
-                logger.warn("onError, Sec-WebSocket-Key: $wsSocketKey }", e)
+                logger.warn("onError", e)
                 closeExceptionally(e)
             } finally {
                 wsListener?.let { removeListener(it) }
