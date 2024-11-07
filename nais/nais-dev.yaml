@@ -9,7 +9,7 @@ metadata:
     nginx.ingress.kubernetes.io/proxy-read-timeout: "600"
     nginx.ingress.kubernetes.io/proxy-send-timeout: "600"
 spec:
-  image: ghcr.io/navikt/please:{{version}}
+  image: {{ image }}
   ingresses:
     - https://please.ekstern.dev.nav.no
   port: 8080
