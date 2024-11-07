@@ -3,12 +3,12 @@ apiVersion: nais.io/v1alpha1
 metadata:
   name: please
   namespace: dab
-  cluster: prod-gcp
   labels:
     team: dab
   annotations:
     nginx.ingress.kubernetes.io/proxy-read-timeout: "600"
     nginx.ingress.kubernetes.io/proxy-send-timeout: "600"
+    config.linkerd.io/proxy-cpu-limit: 500m
 spec:
   image: ghcr.io/navikt/please:{{version}}
   ingresses:
@@ -34,7 +34,6 @@ spec:
     cpuThresholdPercentage: 50
   resources:
     limits:
-      cpu: "2"
       memory: 1024Mi
     requests:
       cpu: 200m

@@ -3,7 +3,6 @@ apiVersion: nais.io/v1alpha1
 metadata:
   name: please
   namespace: dab
-  cluster: dev-gcp
   labels:
     team: dab
   annotations:
@@ -34,7 +33,6 @@ spec:
     cpuThresholdPercentage: 50
   resources:
     limits:
-      cpu: "2"
       memory: 1024Mi
     requests:
       cpu: 200m
