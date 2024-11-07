@@ -13,6 +13,10 @@ on:
       SLACK_WEBHOOK:
         required: false
 
+permissions:
+  contents: read
+  id-token: write
+
 jobs:
   test-build-and-push:
     name: Test, build and push
