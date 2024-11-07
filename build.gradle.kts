@@ -15,6 +15,7 @@ plugins {
     kotlin("jvm") version "1.9.10"
     id("io.ktor.plugin") version "2.3.3"
     id("org.jetbrains.kotlin.plugin.serialization") version "1.9.10"
+    id("com.google.cloud.tools.jib") version "3.4.4"
 }
 
 group = "no.nav.please"
