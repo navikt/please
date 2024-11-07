@@ -11,7 +11,7 @@ on:
       NAIS_WORKLOAD_IDENTITY_PROVIDER:
         required: true
       SLACK_WEBHOOK:
-        required: true
+        required: false
 
 jobs:
   test-build-and-push:
