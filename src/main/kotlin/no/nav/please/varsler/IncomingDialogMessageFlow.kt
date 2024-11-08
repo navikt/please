@@ -1,7 +1,9 @@
 package no.nav.please.varsler
 
+import arrow.core.Either
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
+import no.nav.please.retry.MaxRetryError
 import org.slf4j.LoggerFactory
 
 object IncomingDialogMessageFlow {
@@ -23,7 +25,7 @@ object IncomingDialogMessageFlow {
     fun stop() {
         shuttingDown = true
     }
-    fun flowOf(subscribe: (scope: CoroutineScope, suspend (message: String) -> Unit) -> Unit): MutableSharedFlow<String> {
+    fun flowOf(subscribe: suspend (scope: CoroutineScope, suspend (message: String) -> Unit, suspend () -> Unit) -> Unit): MutableSharedFlow<String> {
         val coroutineScope = CoroutineScope(Dispatchers.IO)
         val handler = CoroutineExceptionHandler { thread, exception ->
             logger.error("Error in event flow coroutine:", exception)
@@ -32,12 +34,20 @@ object IncomingDialogMessageFlow {
         logger.info("Setting up flow subscription...")
         coroutineScope.launch(handler) {
             logger.info("Launched coroutine for polling...")
-            isStartedState.emit(true)
-            subscribe(coroutineScope) { message -> messageFlow.emit(message) }
+            subscribe(coroutineScope,
+                { message -> messageFlow.emit(message) },
+                {
+                    logger.info("Successfully subscribed to redis")
+                    isStartedState.emit(true)
+                })
         }
 
         runBlocking { isStartedState.first { isStarted -> isStarted } }
         return messageFlow
+    }
+
+    fun isReady(): Boolean {
+        return isStartedState.value
     }
 }
 

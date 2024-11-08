@@ -12,10 +12,9 @@ val jedis_version: String by project
 val arrow_version: String by project
 
 plugins {
-    kotlin("jvm") version "1.9.10"
+    kotlin("jvm") version "2.0.20"
     id("io.ktor.plugin") version "2.3.3"
     id("org.jetbrains.kotlin.plugin.serialization") version "1.9.10"
-    id("com.google.cloud.tools.jib") version "3.4.4"
 }
 
 group = "no.nav.please"
@@ -29,12 +28,12 @@ application {
 
 java {
     toolchain {
-        languageVersion.set(JavaLanguageVersion.of(17))
+        languageVersion.set(JavaLanguageVersion.of(21))
     }
 }
 
 kotlin {
-    jvmToolchain(17)
+    jvmToolchain(21)
 }
 
 repositories {

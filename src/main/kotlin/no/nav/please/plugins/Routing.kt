@@ -1,7 +1,6 @@
 package no.nav.please.plugins
 
 import arrow.core.Either
-import no.nav.please.varsler.WsTicketHandler
 import io.ktor.http.*
 import io.ktor.server.application.*
 import io.ktor.server.auth.*
@@ -11,8 +10,7 @@ import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import kotlinx.serialization.Serializable
 import no.nav.please.retry.MaxRetryError
-import no.nav.please.varsler.EventType
-import no.nav.please.varsler.TicketRequest
+import no.nav.please.varsler.*
 import no.nav.please.varsler.logger
 import no.nav.security.token.support.v2.TokenValidationContextPrincipal
 
@@ -20,7 +18,7 @@ fun Application.configureRouting(publishMessage: suspend (message: NyDialogNotif
     routing {
         route("/isAlive") {
             get {
-                val redisStatus = pingRedis()
+                pingRedis()
                     .fold({
                         logger.warn("Failed to ping redis in isAlive")
                         call.respond(HttpStatusCode.InternalServerError)
@@ -32,12 +30,11 @@ fun Application.configureRouting(publishMessage: suspend (message: NyDialogNotif
         }
         route("/isReady") {
             get {
-                pingRedis()
-                    .fold({
-                        call.respond(HttpStatusCode.InternalServerError)
-                    }, {
-                        call.respond(HttpStatusCode.OK)
-                    })
+                val ready = IncomingDialogMessageFlow.isReady() and pingRedis().fold({ false }, { true })
+                when (ready) {
+                    false -> call.respond(HttpStatusCode.InternalServerError)
+                    true -> call.respond(HttpStatusCode.OK)
+                }
             }
         }
         authenticate("AzureOrTokenX") {
