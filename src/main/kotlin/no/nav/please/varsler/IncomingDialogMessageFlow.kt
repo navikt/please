@@ -34,16 +34,23 @@ object IncomingDialogMessageFlow {
         logger.info("Setting up flow subscription...")
         coroutineScope.launch(handler) {
             logger.info("Launched coroutine for polling...")
-            isStartedState.emit(true)
             subscribe(coroutineScope) { message -> messageFlow.emit(message) }
                 .mapLeft {
                     logger.error("Failed to subscribe to redis pubsub message", it.latestException)
                     throw it.latestException
                 }
+                .map {
+                    // Only set is started if successfully subscribed to redis-pubsub
+                    isStartedState.emit(true)
+                }
         }
 
         runBlocking { isStartedState.first { isStarted -> isStarted } }
         return messageFlow
+    }
+
+    fun isReady(): Boolean {
+        return isStartedState.value
     }
 }
 
