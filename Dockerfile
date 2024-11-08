@@ -20,7 +20,7 @@ RUN gradle buildFatJar --no-daemon
 FROM busybox:1.36.1-uclibc as busybox
 
 # Stage 3: Create the Runtime Image
-FROM gcr.io/distroless/java17 AS runtime
+FROM gcr.io/distroless/java21 AS runtime
 
 COPY --from=busybox /bin/sh /bin/sh
 COPY --from=busybox /bin/printenv /bin/printenv
