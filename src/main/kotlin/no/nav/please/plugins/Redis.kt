@@ -7,6 +7,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import no.nav.please.retry.MaxRetryError
@@ -14,6 +15,7 @@ import no.nav.please.retry.Retry
 import no.nav.please.varsler.*
 import org.slf4j.LoggerFactory
 import redis.clients.jedis.*
+import redis.clients.jedis.exceptions.JedisConnectionException
 
 typealias PublishMessage = suspend (NyDialogNotification) -> Either<MaxRetryError, Long>
 typealias PingRedis = suspend () -> Either<MaxRetryError, String>
@@ -48,7 +50,7 @@ fun Application.configureRedis(): Triple<PublishMessage, PingRedis, TicketStore>
         }
     }
 
-    suspend fun subscribeToRedisPubSub(scope: CoroutineScope, onMessage: suspend (message: String) -> Unit): Either<MaxRetryError, Unit> {
+    suspend fun subscribeToRedisPubSub(scope: CoroutineScope, onMessage: suspend (message: String) -> Unit, onSubscribe: suspend () -> Unit): Unit {
         val eventHandler = object : JedisPubSub() {
             override fun onMessage(channel: String?, message: String?) {
                 if (message == null) return
@@ -61,8 +63,13 @@ fun Application.configureRedis(): Triple<PublishMessage, PingRedis, TicketStore>
                 jedisPool.subscribe(this, channel)
                 log.info("Re-subscribed after unsubscribe")
             }
+
+            override fun onSubscribe(channel: String?, subscribedChannels: Int) {
+                super.onSubscribe(channel, subscribedChannels)
+                runBlocking { onSubscribe() }
+            }
         }
-        return Retry.withRetry(retries = 10) {
+        retryHangingFunction(maxRetries = 3, currentRetry = 0) {
             jedisPool.subscribe(eventHandler, channel)
         }
     }
@@ -86,4 +93,18 @@ fun Application.configureRedis(): Triple<PublishMessage, PingRedis, TicketStore>
     }
 
     return Triple(publishMessage, pingRedis, RedisTicketStore(jedisPool))
+}
+
+suspend fun retryHangingFunction(maxRetries: Int, currentRetry: Int = 0, exception: Exception? = null, nonReturningFunction: () -> Unit) {
+    if (currentRetry >= maxRetries) {
+        exception?.let { throw it } ?: throw IllegalStateException("Could not subscribe to redis pubsub after $maxRetries retries")
+    }
+    try {
+        nonReturningFunction()
+        // If this line is reached, there are no subscriptions in redis which is wrong, retry
+        return retryHangingFunction(maxRetries, currentRetry + 1, null, nonReturningFunction)
+    } catch (jedisException: JedisConnectionException) {
+        // Try again on jedis exception
+        return retryHangingFunction(maxRetries, currentRetry + 1, jedisException, nonReturningFunction)
+    }
 }

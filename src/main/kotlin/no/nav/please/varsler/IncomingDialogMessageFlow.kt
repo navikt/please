@@ -25,7 +25,7 @@ object IncomingDialogMessageFlow {
     fun stop() {
         shuttingDown = true
     }
-    fun flowOf(subscribe: suspend (scope: CoroutineScope, suspend (message: String) -> Unit) -> Either<MaxRetryError, Unit>): MutableSharedFlow<String> {
+    fun flowOf(subscribe: suspend (scope: CoroutineScope, suspend (message: String) -> Unit, suspend () -> Unit) -> Unit): MutableSharedFlow<String> {
         val coroutineScope = CoroutineScope(Dispatchers.IO)
         val handler = CoroutineExceptionHandler { thread, exception ->
             logger.error("Error in event flow coroutine:", exception)
@@ -34,15 +34,12 @@ object IncomingDialogMessageFlow {
         logger.info("Setting up flow subscription...")
         coroutineScope.launch(handler) {
             logger.info("Launched coroutine for polling...")
-            subscribe(coroutineScope) { message -> messageFlow.emit(message) }
-                .mapLeft {
-                    logger.error("Failed to subscribe to redis pubsub message", it.latestException)
-                    throw it.latestException
-                }
-                .map {
-                    // Only set is started if successfully subscribed to redis-pubsub
+            subscribe(coroutineScope,
+                { message -> messageFlow.emit(message) },
+                {
+                    logger.info("Successfully subscribed to redis")
                     isStartedState.emit(true)
-                }
+                })
         }
 
         runBlocking { isStartedState.first { isStarted -> isStarted } }
