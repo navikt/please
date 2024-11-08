@@ -36,6 +36,10 @@ object IncomingDialogMessageFlow {
             logger.info("Launched coroutine for polling...")
             isStartedState.emit(true)
             subscribe(coroutineScope) { message -> messageFlow.emit(message) }
+                .mapLeft {
+                    logger.error("Failed to subscribe to redis pubsub message", it.latestException)
+                    throw it.latestException
+                }
         }
 
         runBlocking { isStartedState.first { isStarted -> isStarted } }

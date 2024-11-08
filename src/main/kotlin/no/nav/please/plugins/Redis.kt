@@ -48,7 +48,7 @@ fun Application.configureRedis(): Triple<PublishMessage, PingRedis, TicketStore>
         }
     }
 
-    suspend fun subscribe(scope: CoroutineScope, onMessage: suspend (message: String) -> Unit): Either<MaxRetryError, Unit> {
+    suspend fun subscribeToRedisPubSub(scope: CoroutineScope, onMessage: suspend (message: String) -> Unit): Either<MaxRetryError, Unit> {
         val eventHandler = object : JedisPubSub() {
             override fun onMessage(channel: String?, message: String?) {
                 if (message == null) return
@@ -62,12 +62,12 @@ fun Application.configureRedis(): Triple<PublishMessage, PingRedis, TicketStore>
                 log.info("Re-subscribed after unsubscribe")
             }
         }
-        return Retry.withRetry {
+        return Retry.withRetry(retries = 10) {
             jedisPool.subscribe(eventHandler, channel)
         }
     }
 
-    IncomingDialogMessageFlow.flowOf(::subscribe)
+    IncomingDialogMessageFlow.flowOf(::subscribeToRedisPubSub)
         .onEach { DialogNotifier.notifySubscribers(it) }
         .launchIn(CoroutineScope(Dispatchers.IO))
 
