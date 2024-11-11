@@ -11,6 +11,7 @@ import io.ktor.server.routing.*
 import kotlinx.serialization.Serializable
 import no.nav.please.retry.MaxRetryError
 import no.nav.please.varsler.*
+import no.nav.please.varsler.IncomingDialogMessageFlow.isSubscribedToRedisPubSub
 import no.nav.please.varsler.logger
 import no.nav.security.token.support.v2.TokenValidationContextPrincipal
 
@@ -18,6 +19,18 @@ fun Application.configureRouting(publishMessage: suspend (message: NyDialogNotif
     routing {
         route("/isAlive") {
             get {
+                val redisStatus = pingRedis()
+                val ready = isSubscribedToRedisPubSub() and redisStatus.isRight()
+                when (ready) {
+                    false -> {
+                        logger.warn("Failed to ping redis in isAlive")
+                        call.respond(HttpStatusCode.InternalServerError)
+                    }
+                    true -> {
+                        require(redisStatus.getOrNull() == "PONG") { "Redis returnerer $redisStatus fra ping()" }
+                        call.respond(HttpStatusCode.OK)
+                    }
+                }
                 pingRedis()
                     .fold({
                         logger.warn("Failed to ping redis in isAlive")
@@ -30,7 +43,7 @@ fun Application.configureRouting(publishMessage: suspend (message: NyDialogNotif
         }
         route("/isReady") {
             get {
-                val ready = IncomingDialogMessageFlow.isReady() and pingRedis().fold({ false }, { true })
+                val ready = isSubscribedToRedisPubSub() and pingRedis().fold({ false }, { true })
                 when (ready) {
                     false -> call.respond(HttpStatusCode.InternalServerError)
                     true -> call.respond(HttpStatusCode.OK)

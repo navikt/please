@@ -1,5 +1,7 @@
 package no.nav.please.plugins
 
+import PubSubSubscribeConfigBuilder
+import PubsubConfigArgs
 import arrow.core.Either
 import io.ktor.server.application.*
 import kotlinx.coroutines.CoroutineScope
@@ -36,9 +38,7 @@ fun Application.configureRedis(): Triple<PublishMessage, PingRedis, TicketStore>
         .timeoutMillis(0)
         .build()
 
-
-    val (host, port) = hostAndPort.split(":")
-        .also { require(it.size >= 2) { "Malformed redis url" } }
+    val (host, port) = hostAndPort.split(":").also { require(it.size >= 2) { "Malformed redis url" } }
     val redisHostAndPort = HostAndPort(host, port.toInt())
     log.info("Connecting to redis, host: $host port: $port user: $username channel: $channel")
 
@@ -50,31 +50,14 @@ fun Application.configureRedis(): Triple<PublishMessage, PingRedis, TicketStore>
         }
     }
 
-    suspend fun subscribeToRedisPubSub(scope: CoroutineScope, onMessage: suspend (message: String) -> Unit, onSubscribe: suspend () -> Unit): Unit {
-        val eventHandler = object : JedisPubSub() {
-            override fun onMessage(channel: String?, message: String?) {
-                if (message == null) return
-                scope.launch { onMessage(message) }
-            }
+    val subscribeConfigBuilder = PubSubSubscribeConfigBuilder(
+        PubsubConfigArgs(
+            jedisPool = jedisPool,
+            channel = channel,
+        )
+    )
 
-            override fun onUnsubscribe(channel: String?, subscribedChannels: Int) {
-                super.onUnsubscribe(channel, subscribedChannels)
-                log.info("Received unsubscribe")
-                jedisPool.subscribe(this, channel)
-                log.info("Re-subscribed after unsubscribe")
-            }
-
-            override fun onSubscribe(channel: String?, subscribedChannels: Int) {
-                super.onSubscribe(channel, subscribedChannels)
-                runBlocking { onSubscribe() }
-            }
-        }
-        retryHangingFunction(maxRetries = 3, currentRetry = 0) {
-            jedisPool.subscribe(eventHandler, channel)
-        }
-    }
-
-    IncomingDialogMessageFlow.flowOf(::subscribeToRedisPubSub)
+    IncomingDialogMessageFlow.flowOf(subscribeConfigBuilder)
         .onEach { DialogNotifier.notifySubscribers(it) }
         .launchIn(CoroutineScope(Dispatchers.IO))
 
@@ -93,18 +76,4 @@ fun Application.configureRedis(): Triple<PublishMessage, PingRedis, TicketStore>
     }
 
     return Triple(publishMessage, pingRedis, RedisTicketStore(jedisPool))
-}
-
-suspend fun retryHangingFunction(maxRetries: Int, currentRetry: Int = 0, exception: Exception? = null, nonReturningFunction: () -> Unit) {
-    if (currentRetry >= maxRetries) {
-        exception?.let { throw it } ?: throw IllegalStateException("Could not subscribe to redis pubsub after $maxRetries retries")
-    }
-    try {
-        nonReturningFunction()
-        // If this line is reached, there are no subscriptions in redis which is wrong, retry
-        return retryHangingFunction(maxRetries, currentRetry + 1, null, nonReturningFunction)
-    } catch (jedisException: JedisConnectionException) {
-        // Try again on jedis exception
-        return retryHangingFunction(maxRetries, currentRetry + 1, jedisException, nonReturningFunction)
-    }
 }
