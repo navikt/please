@@ -1,5 +1,6 @@
 package no.nav.please.varsler
 
+import PubSubSubscribeConfigBuilder
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 import org.slf4j.LoggerFactory
@@ -23,7 +24,7 @@ object IncomingDialogMessageFlow {
     fun stop() {
         shuttingDown = true
     }
-    fun flowOf(subscribe: (scope: CoroutineScope, suspend (message: String) -> Unit) -> Unit): MutableSharedFlow<String> {
+    fun flowOf(subscribeConfig: PubSubSubscribeConfigBuilder): MutableSharedFlow<String> {
         val coroutineScope = CoroutineScope(Dispatchers.IO)
         val handler = CoroutineExceptionHandler { thread, exception ->
             logger.error("Error in event flow coroutine:", exception)
@@ -32,12 +33,24 @@ object IncomingDialogMessageFlow {
         logger.info("Setting up flow subscription...")
         coroutineScope.launch(handler) {
             logger.info("Launched coroutine for polling...")
-            isStartedState.emit(true)
-            subscribe(coroutineScope) { message -> messageFlow.emit(message) }
+            subscribeConfig
+                .withScope(coroutineScope)
+                .onMessage { message -> messageFlow.emit(message) }
+                .onSubscribe {
+                    logger.info("Successfully subscribed to redis")
+                    isStartedState.emit(true)
+                }
+
+                .onUnsubscribe { isStartedState.emit(false) }
+                .startSubscribeLoop()
         }
 
         runBlocking { isStartedState.first { isStarted -> isStarted } }
         return messageFlow
+    }
+
+    fun isSubscribedToRedisPubSub(): Boolean {
+        return isStartedState.value
     }
 }
 

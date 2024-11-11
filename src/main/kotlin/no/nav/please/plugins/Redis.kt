@@ -1,5 +1,7 @@
 package no.nav.please.plugins
 
+import PubSubSubscribeConfigBuilder
+import PubsubConfigArgs
 import arrow.core.Either
 import io.ktor.server.application.*
 import kotlinx.coroutines.CoroutineScope
@@ -7,6 +9,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import no.nav.please.retry.MaxRetryError
@@ -14,6 +17,7 @@ import no.nav.please.retry.Retry
 import no.nav.please.varsler.*
 import org.slf4j.LoggerFactory
 import redis.clients.jedis.*
+import redis.clients.jedis.exceptions.JedisConnectionException
 
 typealias PublishMessage = suspend (NyDialogNotification) -> Either<MaxRetryError, Long>
 typealias PingRedis = suspend () -> Either<MaxRetryError, String>
@@ -34,9 +38,7 @@ fun Application.configureRedis(): Triple<PublishMessage, PingRedis, TicketStore>
         .timeoutMillis(0)
         .build()
 
-
-    val (host, port) = hostAndPort.split(":")
-        .also { require(it.size >= 2) { "Malformed redis url" } }
+    val (host, port) = hostAndPort.split(":").also { require(it.size >= 2) { "Malformed redis url" } }
     val redisHostAndPort = HostAndPort(host, port.toInt())
     log.info("Connecting to redis, host: $host port: $port user: $username channel: $channel")
 
@@ -48,24 +50,14 @@ fun Application.configureRedis(): Triple<PublishMessage, PingRedis, TicketStore>
         }
     }
 
-    val subscribe = { scope: CoroutineScope, onMessage: suspend (message: String) -> Unit ->
-        val eventHandler = object : JedisPubSub() {
-            override fun onMessage(channel: String?, message: String?) {
-                if (message == null) return
-                scope.launch { onMessage(message) }
-            }
+    val subscribeConfigBuilder = PubSubSubscribeConfigBuilder(
+        PubsubConfigArgs(
+            jedisPool = jedisPool,
+            channel = channel,
+        )
+    )
 
-            override fun onUnsubscribe(channel: String?, subscribedChannels: Int) {
-                super.onUnsubscribe(channel, subscribedChannels)
-                log.info("Received unsubscribe")
-                jedisPool.subscribe(this, channel)
-                log.info("Re-subscribed after unsubscribe")
-            }
-        }
-        jedisPool.subscribe(eventHandler, channel)
-    }
-
-    IncomingDialogMessageFlow.flowOf(subscribe)
+    IncomingDialogMessageFlow.flowOf(subscribeConfigBuilder)
         .onEach { DialogNotifier.notifySubscribers(it) }
         .launchIn(CoroutineScope(Dispatchers.IO))
 

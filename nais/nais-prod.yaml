@@ -10,7 +10,7 @@ metadata:
     nginx.ingress.kubernetes.io/proxy-send-timeout: "600"
     config.linkerd.io/proxy-cpu-limit: 500m
 spec:
-  image: ghcr.io/navikt/please:{{version}}
+  image: {{ image }}
   ingresses:
     - https://please.nav.no
   port: 8080

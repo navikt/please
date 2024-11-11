@@ -1,17 +1,21 @@
 on:
   workflow_call:
     inputs:
+      NAIS_MANAGEMENT_PROJECT_ID:
+        required: true
+        type: string
       env:
         required: true
         type: string
     secrets:
-      NAIS_DEPLOY_APIKEY:
+      NAIS_WORKLOAD_IDENTITY_PROVIDER:
         required: true
       SLACK_WEBHOOK:
-        required: true
+        required: false
 
-env:
-  IMAGE_TAG: ${{ github.sha }}
+permissions:
+  contents: read
+  id-token: write
 
 jobs:
   test-build-and-push:
@@ -20,27 +24,29 @@ jobs:
     steps:
     - name: Checkout
       uses: actions/checkout@v3
-    - name: Set up JDK 17
+    - name: Set up JDK 21
       uses: actions/setup-java@v3
       with:
-        java-version: 17
+        java-version: 21
         distribution: 'temurin'
         cache: 'gradle'
     - name: PLEASE - Test
       run: ./gradlew test
-    - name: PLEASE - Publish image
-      run: ./gradlew publishImage --scan
+    - name: Build and push image and SBOM to OCI registry
+      uses: nais/docker-build-push@v0
+      id: docker-build-push
+      with:
+        team: dab
+        identity_provider: ${{ secrets.NAIS_WORKLOAD_IDENTITY_PROVIDER }} # Provided as Organization Secret
+        project_id: ${{ inputs.NAIS_MANAGEMENT_PROJECT_ID }} # Provided as Organization Variable
+    - name: Deploy to NAIS ${{ inputs.env }}
+      uses: nais/deploy/actions/deploy@v2
       env:
-        IMAGE_TAG: ${{ env.IMAGE_TAG }}
-        USERNAME: ${{ github.actor }}
-        PASSWORD: ${{ secrets.GITHUB_TOKEN }}
-    - name: Deploy application
-      uses: nais/deploy/actions/deploy@v1
-      env:
-        APIKEY: ${{ secrets.NAIS_DEPLOY_APIKEY }}
         CLUSTER: ${{ inputs.env }}-gcp
         RESOURCE: nais/nais-${{ inputs.env }}.yaml
-        VAR: version=${{ env.IMAGE_TAG }}
+        VAR: image=${{ steps.docker-build-push.outputs.image }}
+        TELEMETRY: ${{ steps.docker-build-push.outputs.telemetry }}
+        DEPLOY_SERVER: deploy.nav.cloud.nais.io:443
     - name: Slack Notification (deploy failure)
       if: failure() && inputs.env == 'prod'
       uses: rtCamp/action-slack-notify@v2
