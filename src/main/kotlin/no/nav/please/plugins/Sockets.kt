@@ -7,6 +7,7 @@ import io.ktor.server.application.*
 import io.ktor.server.request.*
 import io.ktor.server.routing.*
 import io.ktor.server.websocket.*
+import io.ktor.utils.io.CancellationException
 import io.ktor.websocket.*
 import kotlinx.coroutines.channels.ClosedReceiveChannelException
 import no.nav.please.varsler.ClientClosedException
@@ -46,6 +47,9 @@ fun Application.configureSockets(ticketHandler: WsTicketHandler) {
                 logger.info("${e.message}, ${closeReason.await()}")
             } catch (e: IOException)  {
                 logger.warn("IOException: ${e.message}", e)
+                closeExceptionally(e)
+            } catch (e: CancellationException) {
+                logger.warn("CancellationException: ${e.message}", e)
                 closeExceptionally(e)
             } catch (e: Throwable) {
                 logger.warn("unhandled error: ${e.message}", e)
