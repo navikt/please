@@ -183,8 +183,8 @@ class ApplicationTest : StringSpec({
                 "no.nav.security.jwt.issuers.0.discoveryurl" to "${server.wellKnownUrl(acceptedIssuer)}",
                 "no.nav.security.jwt.issuers.0.accepted_audience" to acceptedAudience,
                 "topic.ny-dialog" to testTopic,
-                "redis.host" to "rediss://localhost:6379",
-                "redis.channel" to "dab.dialog-events-v1"
+                "valkey.host" to "rediss://localhost:6379",
+                "valkey.channel" to "dab.dialog-events-v1"
             )
         }
     }

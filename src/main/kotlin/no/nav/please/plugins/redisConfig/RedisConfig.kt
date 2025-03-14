@@ -1,11 +1,11 @@
 import io.ktor.server.application.log
+import io.valkey.JedisPooled
+import io.valkey.JedisPubSub
+import io.valkey.exceptions.JedisConnectionException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import org.slf4j.LoggerFactory
-import redis.clients.jedis.JedisPooled
-import redis.clients.jedis.JedisPubSub
-import redis.clients.jedis.exceptions.JedisConnectionException
 
 typealias MessageHandler = suspend (message: String) -> Unit
 typealias OnSubscribeHandler = suspend () -> Unit

@@ -16,6 +16,9 @@ spec:
   redis:
     - instance: please
       access: readwrite
+  valkey:
+    - instance: please
+      access: readwrite
   liveness:
     path: /isAlive
     port: 8080

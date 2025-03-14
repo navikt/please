@@ -8,7 +8,7 @@ val mockoath_version: String by project
 val kotest_version: String by project
 val prometheus_version: String by project
 val logstash_encoder_version: String by project
-val jedis_version: String by project
+val valkey_java_version: String by project
 val arrow_version: String by project
 
 plugins {
@@ -87,7 +87,7 @@ dependencies {
 
     implementation("ch.qos.logback:logback-classic:$logback_version")
     implementation("no.nav.security:token-validation-ktor-v2:$tokensupport_version")
-    implementation("redis.clients:jedis:$jedis_version")
+    implementation("io.valkey:valkey-java:$valkey_java_version")
     testImplementation("io.kotest:kotest-runner-junit5:$kotest_version")
     testImplementation("io.kotest:kotest-assertions-core:$kotest_version")
     testImplementation("org.signal:embedded-redis:0.8.3")

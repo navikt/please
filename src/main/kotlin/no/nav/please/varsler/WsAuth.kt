@@ -3,12 +3,12 @@ package no.nav.please.varsler
 import arrow.core.raise.either
 import io.ktor.server.websocket.*
 import io.ktor.websocket.*
+import io.valkey.exceptions.JedisException
 import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.flow.*
 import no.nav.please.errorUtil.LoggableError
 import no.nav.please.plugins.SocketResponse
 import org.slf4j.LoggerFactory
-import redis.clients.jedis.exceptions.JedisException
 
 val logger = LoggerFactory.getLogger("no.nav.please.varsler.WsAuth.kt")
 

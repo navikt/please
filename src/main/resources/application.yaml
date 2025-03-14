@@ -17,6 +17,12 @@ redis:
   password: "$REDIS_PASSWORD_PLEASE:null"
   channel: "dab.dialog-events-v1"
 
+valkey:
+  host: "$REDIS_URI_PLEASE:null"
+  username: "$REDIS_USERNAME_PLEASE:null"
+  password: "$REDIS_PASSWORD_PLEASE:null"
+  channel: "dab.dialog-events-v1"
+
 no:
   nav:
     security:
