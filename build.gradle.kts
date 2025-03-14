@@ -67,13 +67,13 @@ ktor {
 }
 
 dependencies {
-    implementation("io.ktor:ktor-server-call-logging-jvm:2.3.6")
-    implementation("io.ktor:ktor-server-call-id-jvm:2.3.6")
-    implementation("io.ktor:ktor-server-content-negotiation-jvm:2.3.6")
-    implementation("io.ktor:ktor-server-core-jvm:2.3.6")
-    implementation("io.ktor:ktor-serialization-kotlinx-json-jvm:2.3.6")
-    implementation("io.ktor:ktor-server-websockets-jvm:2.3.6")
-    implementation("io.ktor:ktor-server-netty-jvm:2.3.6")
+    implementation("io.ktor:ktor-server-call-logging-jvm:$ktor_version")
+    implementation("io.ktor:ktor-server-call-id-jvm:$ktor_version")
+    implementation("io.ktor:ktor-server-content-negotiation-jvm:$ktor_version")
+    implementation("io.ktor:ktor-server-core-jvm:$ktor_version")
+    implementation("io.ktor:ktor-serialization-kotlinx-json-jvm:$ktor_version")
+    implementation("io.ktor:ktor-server-websockets-jvm:$ktor_version")
+    implementation("io.ktor:ktor-server-netty-jvm:$ktor_version")
     implementation("io.ktor:ktor-server-auth:$ktor_version")
     implementation("io.ktor:ktor-server-auth-jwt:$ktor_version")
     implementation("io.ktor:ktor-server-config-yaml:$ktor_version")
@@ -82,11 +82,13 @@ dependencies {
     implementation("io.arrow-kt:arrow-core:$arrow_version")
     implementation("io.arrow-kt:arrow-fx-coroutines:$arrow_version")
     implementation("io.arrow-kt:arrow-resilience-jvm:$arrow_version")
+    implementation("org.slf4j:slf4j-api:1.7.25")
 
     implementation("net.logstash.logback:logstash-logback-encoder:$logstash_encoder_version")
 
     implementation("ch.qos.logback:logback-classic:$logback_version")
     implementation("no.nav.security:token-validation-ktor-v2:$tokensupport_version")
+
     implementation("io.valkey:valkey-java:$valkey_java_version")
     testImplementation("io.kotest:kotest-runner-junit5:$kotest_version")
     testImplementation("io.kotest:kotest-assertions-core:$kotest_version")
