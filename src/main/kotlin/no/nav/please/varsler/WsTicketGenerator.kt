@@ -1,14 +1,13 @@
 package no.nav.please.varsler
 
 import arrow.core.Either
-import arrow.core.computations.ResultEffect.bind
 import arrow.core.left
 import arrow.core.raise.either
 import arrow.core.right
+import io.valkey.exceptions.JedisException
 import kotlinx.serialization.Serializable
 import no.nav.please.errorUtil.LoggableError
 import no.nav.please.plugins.*
-import redis.clients.jedis.exceptions.JedisException
 import java.util.*
 
 @Serializable

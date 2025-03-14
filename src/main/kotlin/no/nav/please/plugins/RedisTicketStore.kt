@@ -4,6 +4,8 @@ import arrow.core.Either
 import arrow.core.left
 import arrow.core.raise.either
 import arrow.core.right
+import io.valkey.JedisPooled
+import io.valkey.exceptions.JedisException
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import no.nav.please.retry.Retry.Companion.withRetry
@@ -11,8 +13,6 @@ import no.nav.please.varsler.Subscription
 import no.nav.please.varsler.TicketStore
 import no.nav.please.varsler.WellFormedTicket
 import org.slf4j.LoggerFactory
-import redis.clients.jedis.JedisPooled
-import redis.clients.jedis.exceptions.JedisException
 
 sealed interface TicketStoreError: GetSubscriptionError
 class JedisTicketStoreError(val operationDescription: String, val jedisError: JedisException): TicketStoreError

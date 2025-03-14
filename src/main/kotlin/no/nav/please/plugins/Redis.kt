@@ -4,20 +4,21 @@ import PubSubSubscribeConfigBuilder
 import PubsubConfigArgs
 import arrow.core.Either
 import io.ktor.server.application.*
+import io.valkey.DefaultJedisClientConfig
+import io.valkey.DefaultRedisCredentials
+import io.valkey.DefaultRedisCredentialsProvider
+import io.valkey.HostAndPort
+import io.valkey.JedisPooled
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import no.nav.please.retry.MaxRetryError
 import no.nav.please.retry.Retry
 import no.nav.please.varsler.*
 import org.slf4j.LoggerFactory
-import redis.clients.jedis.*
-import redis.clients.jedis.exceptions.JedisConnectionException
 
 typealias PublishMessage = suspend (NyDialogNotification) -> Either<MaxRetryError, Long>
 typealias PingRedis = suspend () -> Either<MaxRetryError, String>
@@ -25,10 +26,10 @@ fun Application.configureRedis(): Triple<PublishMessage, PingRedis, TicketStore>
     val logger = LoggerFactory.getLogger(Application::class.java)
 
     val config = this.environment.config
-    val hostAndPort = config.property("redis.host").getString().split("://").last()
-    val username = config.propertyOrNull("redis.username")?.getString()
-    val password = config.propertyOrNull("redis.password")?.getString()
-    val channel = config.property("redis.channel").getString()
+    val hostAndPort = config.property("valkey.host").getString().split("://").last()
+    val username = config.propertyOrNull("valkey.username")?.getString()
+    val password = config.propertyOrNull("valkey.password")?.getString()
+    val channel = config.property("valkey.channel").getString()
 
     val credentials = DefaultRedisCredentials(username, password)
     val credentialsProvider = DefaultRedisCredentialsProvider(credentials)
