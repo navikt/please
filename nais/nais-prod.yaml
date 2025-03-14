@@ -14,9 +14,6 @@ spec:
   ingresses:
     - https://please.nav.no
   port: 8080
-  redis:
-    - instance: please
-      access: readwrite
   valkey:
     - instance: please
       access: readwrite
