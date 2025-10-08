@@ -13,7 +13,7 @@ import no.nav.please.retry.MaxRetryError
 import no.nav.please.varsler.*
 import no.nav.please.varsler.IncomingDialogMessageFlow.isSubscribedToRedisPubSub
 import no.nav.please.varsler.logger
-import no.nav.security.token.support.v2.TokenValidationContextPrincipal
+import no.nav.security.token.support.v3.TokenValidationContextPrincipal
 
 fun Application.configureRouting(publishMessage: suspend (message: NyDialogNotification) -> Either<MaxRetryError, Long>, pingRedis: PingRedis, ticketHandler: WsTicketHandler) {
     routing {
@@ -62,7 +62,7 @@ fun Application.configureRouting(publishMessage: suspend (message: NyDialogNotif
                     // TODO: Add authorization(a2) (POAO-tilgang)
                     try {
                         val subject = call.authentication.principal<TokenValidationContextPrincipal>()
-                            ?.context?.anyValidClaims?.get()?.get("sub")?.toString() ?: throw IllegalArgumentException(
+                            ?.context?.anyValidClaims?.get("sub")?.toString() ?: throw IllegalArgumentException(
                             "No subject claim found")
                         val payload = call.receive<TicketRequest>()
                         ticketHandler.generateTicket(subject, payload)
