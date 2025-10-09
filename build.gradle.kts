@@ -12,9 +12,9 @@ val valkey_java_version: String by project
 val arrow_version: String by project
 
 plugins {
-    kotlin("jvm") version "2.0.20"
-    id("io.ktor.plugin") version "2.3.3"
-    id("org.jetbrains.kotlin.plugin.serialization") version "1.9.10"
+    kotlin("jvm") version "2.2.20"
+    id("io.ktor.plugin") version "3.3.0"
+    id("org.jetbrains.kotlin.plugin.serialization") version "2.2.20"
 }
 
 group = "no.nav.please"
@@ -51,7 +51,7 @@ data class GithubImageRegistry(
 
 ktor {
     docker {
-        jreVersion.set(JreVersion.JRE_17)
+        jreVersion.set(JavaVersion.VERSION_21)
         localImageName.set("please")
         imageTag.set(providers.environmentVariable("IMAGE_TAG"))
         externalRegistry.set(
@@ -87,7 +87,7 @@ dependencies {
     implementation("net.logstash.logback:logstash-logback-encoder:$logstash_encoder_version")
 
     implementation("ch.qos.logback:logback-classic:$logback_version")
-    implementation("no.nav.security:token-validation-ktor-v2:$tokensupport_version")
+    implementation("no.nav.security:token-validation-ktor-v3:$tokensupport_version")
 
     implementation("io.valkey:valkey-java:$valkey_java_version")
     testImplementation("io.kotest:kotest-runner-junit5:$kotest_version")

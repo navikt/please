@@ -1,6 +1,5 @@
 package no.nav.please.plugins
 
-import arrow.core.raise.catch
 import no.nav.please.varsler.WsConnectionHolder.addListener
 import no.nav.please.varsler.WsConnectionHolder.removeListener
 import io.ktor.server.application.*
@@ -16,14 +15,14 @@ import no.nav.please.varsler.WsTicketHandler
 import no.nav.please.varsler.awaitAuthentication
 import org.slf4j.LoggerFactory
 import java.io.IOException
-import java.time.Duration
+import kotlin.time.Duration.Companion.seconds
 
 fun Application.configureSockets(ticketHandler: WsTicketHandler) {
     val logger = LoggerFactory.getLogger(javaClass)
 
     install(WebSockets) {
-        pingPeriod = Duration.ofSeconds(15)
-        timeout = Duration.ofSeconds(15)
+        pingPeriod = 15.seconds
+        timeout = 15.seconds
         maxFrameSize = Long.MAX_VALUE
         masking = false
     }

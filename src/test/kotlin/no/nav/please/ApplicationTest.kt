@@ -33,7 +33,9 @@ class ApplicationTest : StringSpec({
     lateinit var client: HttpClient
     beforeSpec {
         testApp = TestApplication {
-            environment { doConfig() }
+            environment {
+                doConfig()
+            }
             application { module() }
         }
         client = testApp.createClient {
@@ -173,7 +175,7 @@ class ApplicationTest : StringSpec({
 
         const val testTopic = "ny-dialog-topic-i-test"
 
-        private fun ApplicationEngineEnvironmentBuilder.doConfig(
+        private fun ApplicationEnvironmentBuilder.doConfig(
             acceptedIssuer: String = "default",
             acceptedAudience: String = "default"
         ) {
