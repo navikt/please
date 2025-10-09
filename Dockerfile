@@ -1,7 +1,7 @@
 # Stage 1: Cache Gradle dependencies
 FROM gradle:9.1.0-jdk21 AS cache
 RUN mkdir -p /home/gradle/cache_home
-ENV GRADLE_USER_HOME /home/gradle/cache_home
+ENV GRADLE_USER_HOME=/home/gradle/cache_home
 COPY build.gradle.* gradle.properties /home/gradle/app/
 WORKDIR /home/gradle/app
 RUN gradle clean build -i --stacktrace
@@ -17,7 +17,7 @@ WORKDIR /home/gradle/src
 # and boot JAR by default.
 RUN gradle buildFatJar --no-daemon
 
-FROM busybox:1.36.1-uclibc as busybox
+FROM busybox:1.36.1-uclibc AS busybox
 
 # Stage 3: Create the Runtime Image
 FROM gcr.io/distroless/java21 AS runtime
@@ -27,7 +27,7 @@ COPY --from=busybox /bin/printenv /bin/printenv
 COPY --from=busybox /bin/mkdir /bin/mkdir
 COPY --from=busybox /bin/chown /bin/chown
 
-EXPOSE 8080:8080
+EXPOSE 8080
 RUN mkdir /app
 COPY --from=build /home/gradle/src/build/libs/no.nav.please-all.jar /app/please.jar
 ENTRYPOINT ["java","-jar","/app/please.jar"]
