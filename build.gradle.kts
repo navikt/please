@@ -51,7 +51,7 @@ data class GithubImageRegistry(
 
 ktor {
     docker {
-//        jreVersion.set(JreVersion.JRE_21)
+        jreVersion.set(JavaVersion.VERSION_21)
         localImageName.set("please")
         imageTag.set(providers.environmentVariable("IMAGE_TAG"))
         externalRegistry.set(

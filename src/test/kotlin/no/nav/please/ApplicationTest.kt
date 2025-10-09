@@ -34,7 +34,6 @@ class ApplicationTest : StringSpec({
     beforeSpec {
         testApp = TestApplication {
             environment {
-                this
                 doConfig()
             }
             application { module() }
