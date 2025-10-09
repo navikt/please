@@ -6,6 +6,7 @@ import io.ktor.server.plugins.callid.*
 import io.ktor.server.plugins.calllogging.CallLogging
 import io.ktor.server.request.*
 import org.slf4j.event.*
+import kotlin.text.format
 
 val excludedPaths = listOf("/isAlive", "/isReady", "/metrics")
 
@@ -17,6 +18,13 @@ fun Application.configureMonitoring() {
             path.startsWith("/") && !excludedPaths.contains(path)
         }
         callIdMdc("nav-call-id")
+        format { call ->
+            val responseTime = call.processingTimeMillis()
+            val status = call.response.status()?.value
+            val method = call.request.httpMethod.value
+            val path = call.request.path()
+            "$status $method - $path in ${responseTime}ms"
+        }
     }
     install(CallId) {
         header(HttpHeaders.XRequestId)
