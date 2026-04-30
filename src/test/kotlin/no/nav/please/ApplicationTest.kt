@@ -208,8 +208,8 @@ class ApplicationTest : StringSpec({
                 "poao-tilgang.url" to "http://app.namespace.svc.cluster.local",
                 "poao-tilgang.token-scope" to "api://cluster.namespace.app/.default",
                 "azure.client-id" to "clientId",
-                "azure.jwk" to jwk,
                 "azure.token-endpoint" to "tokenEndpoint",
+                "azure.client-secret" to "clientSecret"
             )
         }
     }

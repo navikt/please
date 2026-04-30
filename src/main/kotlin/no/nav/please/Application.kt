@@ -1,9 +1,5 @@
 package no.nav.please
 
-import io.ktor.client.*
-import io.ktor.client.engine.okhttp.*
-import io.ktor.client.plugins.auth.*
-import io.ktor.client.plugins.auth.providers.*
 import io.ktor.server.application.*
 import io.ktor.server.netty.*
 import no.nav.please.plugins.*
@@ -19,28 +15,13 @@ fun main(args: Array<String>) {
 }
 
 fun Application.module() {
-
-    val httpClient = HttpClient(OkHttp) {
-        engine {
-            config {
-                followRedirects(true)
-            }
-        }
-        install(Auth) {
-            bearer {
-                loadTokens {
-                    BearerTokens("abc123", "xyz111")
-                }
-            }
-        }
-    }
-
     configureAuthentication()
     configureMonitoring()
     configureMicrometer()
     configureSerialization()
-    val getMachineToMachineToken = configureTokenProvider()
-    val verifyAuthorization = configureAuthorization(getMachineToMachineToken)
+    val (getMachineToMachineToken, getRefreshedMachineToMachineToken) = configureTokenProvider()
+    val machineToMachineHttpClient = configureMachineToMachineHttpClient(getMachineToMachineToken, getRefreshedMachineToMachineToken)
+    val verifyAuthorization = configureAuthorization(getMachineToMachineToken, getRefreshedMachineToMachineToken)
     val (publishMessage, pingRedis, ticketStore) = configureRedis()
     val ticketHandler = WsTicketHandler(ticketStore)
     configureSockets(ticketHandler)

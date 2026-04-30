@@ -31,8 +31,8 @@ no:
 
 azure:
   client-id: "$AZURE_APP_CLIENT_ID"
-  jwk: "$AZURE_APP_JWK"
   token-endpoint: "$AZURE_OPENID_CONFIG_TOKEN_ENDPOINT"
+  client-secret: "$AZURE_APP_CLIENT_SECRET"
 
 poao-tilgang:
   url: "$POAO_TILGANG_CLIENT_URL"
