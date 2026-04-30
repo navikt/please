@@ -24,5 +24,5 @@ fun Application.module() {
     val (publishMessage, pingRedis, ticketStore) = configureRedis()
     val ticketHandler = WsTicketHandler(ticketStore)
     configureSockets(ticketHandler)
-    configureRouting(publishMessage, pingRedis, ticketHandler)
+    configureRouting(publishMessage, pingRedis, ticketHandler, verifyAuthorization)
 }

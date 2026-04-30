@@ -70,8 +70,14 @@ suspend fun DefaultWebSocketServerSession.tryAuthenticateWithMessage(frame: Fram
                         it.log()
                         SocketResponse.FAILED_TO_CONSUME_AUTH_TICKET
                     }
-                    is AuthFailedTicketNotFound -> SocketResponse.INVALID_TOKEN // Don't tell client if ticket exists or not
-                    is AuthFailedInvalidTicketError -> SocketResponse.INVALID_TOKEN
+                    is AuthFailedTicketNotFound -> {
+                        logger.warn("Auth ticket used was not found")
+                        SocketResponse.INVALID_TOKEN
+                    } // Don't tell client if ticket exists or not
+                    is AuthFailedInvalidTicketError -> {
+                        logger.error("Failed to validate auth ticket: ", it)
+                        SocketResponse.INVALID_TOKEN
+                    }
                 }
                 send(response.name)
                 AuthResult.Failed

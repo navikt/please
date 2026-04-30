@@ -1,6 +1,5 @@
 package no.nav.please.plugins
 
-import arrow.core.Either
 import io.ktor.http.*
 import io.ktor.server.application.*
 import io.ktor.server.auth.*
@@ -9,13 +8,13 @@ import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import kotlinx.serialization.Serializable
-import no.nav.please.retry.MaxRetryError
 import no.nav.please.varsler.*
 import no.nav.please.varsler.IncomingDialogMessageFlow.isSubscribedToRedisPubSub
 import no.nav.please.varsler.logger
 import no.nav.security.token.support.v3.TokenValidationContextPrincipal
+import java.util.*
 
-fun Application.configureRouting(publishMessage: suspend (message: NyDialogNotification) -> Either<MaxRetryError, Long>, pingRedis: PingRedis, ticketHandler: WsTicketHandler) {
+fun Application.configureRouting(publishMessage: PublishMessage, pingRedis: PingRedis, ticketHandler: WsTicketHandler, isAuthorized: isAuthorizedToContactExternalUser) {
     routing {
         route("/isAlive") {
             get {
@@ -59,12 +58,22 @@ fun Application.configureRouting(publishMessage: suspend (message: NyDialogNotif
 
             post("/ws-auth-ticket") {
                 try {
-                    // TODO: Add authorization(a2) (POAO-tilgang)
                     try {
                         val subject = call.authentication.principal<TokenValidationContextPrincipal>()
                             ?.context?.anyValidClaims?.get("sub")?.toString() ?: throw IllegalArgumentException(
                             "No subject claim found")
                         val payload = call.receive<TicketRequest>()
+
+                        val externalUserPin = payload.subscriptionKey // TODO: Must be obvious that subscriptionKey is always a PIN?
+                        val navIdent = UUID.fromString(subject) // TODO: IS this always true?
+
+                        // TODO: Only necessary when NAV employee sends message to external user
+                        val isAuthorized = isAuthorized(navIdent, externalUserPin)
+                        if (!isAuthorized) {
+                            call.respond(HttpStatusCode.Forbidden, "Not authorized to send message to the external user")
+                            return@post
+                        }
+
                         ticketHandler.generateTicket(subject, payload)
                             .fold({ error ->
                                 error.log()
