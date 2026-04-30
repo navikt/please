@@ -11,6 +11,7 @@ val logstash_encoder_version: String by project
 val valkey_java_version: String by project
 val arrow_version: String by project
 val poao_tilgang_version: String by project
+val common_version: String by project
 
 plugins {
     kotlin("jvm") version "2.2.20"
@@ -39,22 +40,13 @@ kotlin {
 
 repositories {
     mavenCentral()
-    exclusiveContent {
-        forRepository {
-            maven {
-                url = uri("https://maven.pkg.github.com/navikt/poao-tilgang")
-                credentials {
-                    username = project.findProperty("githubUsername") as String? ?: System.getenv("GITHUB_ACTOR")
-                    password = project.findProperty("githubPassword") as String? ?: System.getenv("GITHUB_TOKEN")
-                }
-            }
-        }
-        filter {
-            // Specify which dependencies belong to this repo
-            includeGroup("no.nav.poao-tilgang")
+    maven {
+        url = uri("https://maven.pkg.github.com/navikt/poao-tilgang")
+        credentials {
+            username = project.findProperty("githubUsername") as String? ?: System.getenv("GITHUB_ACTOR")
+            password = project.findProperty("githubPassword") as String? ?: System.getenv("GITHUB_TOKEN")
         }
     }
-
 }
 
 tasks.withType<Test>().configureEach {
@@ -108,6 +100,7 @@ dependencies {
 
     implementation("io.valkey:valkey-java:$valkey_java_version")
     implementation("no.nav.poao-tilgang:client:$poao_tilgang_version")
+    implementation("no.nav.common:token-client:$common_version")
 
     testImplementation("io.kotest:kotest-runner-junit5:$kotest_version")
     testImplementation("io.kotest:kotest-assertions-core:$kotest_version")

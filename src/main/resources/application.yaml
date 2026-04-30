@@ -29,6 +29,11 @@ no:
             accepted_audience: "$TOKEN_X_CLIENT_ID:null"
             issuer_name: "TokenX"
 
+azure:
+  client-id: "$AZURE_APP_CLIENT_ID"
+  jwk: "$AZURE_APP_JWK"
+  token-endpoint: "$AZURE_OPENID_CONFIG_TOKEN_ENDPOINT"
+
 poao-tilgang:
   url: "$POAO_TILGANG_CLIENT_URL"
   token-scope: "$POAO_TILGANG_CLIENT_SCOPE"
