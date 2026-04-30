@@ -66,9 +66,10 @@ fun Application.configureRouting(
                         val subject = call.getClaim("sub") ?: throw IllegalArgumentException("No subject claim found")
                         val payload = call.receive<TicketRequest>()
 
-                        // TODO: Authorization only necessary when NAV employee sends message to external user
+                        // TODO: Authorization only necessary when NAV employee sends message to external user - check if subject is NAVident
+
                         val externalUserPin = payload.subscriptionKey // TODO: Must be obvious that subscriptionKey is always a PIN?
-                        val employeeAzureId = call.getClaim("oid") ?: throw IllegalArgumentException("No oid claim found")
+                        val employeeAzureId = call.getClaim("oid") ?: throw RuntimeException("No oid claim found")
 
                         if (!navEmployeeIsAuthorized(UUID.fromString(employeeAzureId), externalUserPin)) {
                             call.respond(HttpStatusCode.Forbidden, "Not authorized to send message to the external user")
