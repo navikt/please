@@ -59,14 +59,12 @@ fun Application.configureRouting(publishMessage: PublishMessage, pingRedis: Ping
             post("/ws-auth-ticket") {
                 try {
                     try {
-                        val claims = call.authentication.principal<TokenValidationContextPrincipal>()
-                            ?.context?.anyValidClaims
-                        val subject = claims?.get("sub")?.toString() ?: throw IllegalArgumentException("No subject claim found")
+                        val subject = call.getClaim("sub") ?: throw IllegalArgumentException("No subject claim found")
                         val payload = call.receive<TicketRequest>()
 
-                        // TODO: Only necessary when NAV employee sends message to external user
+                        // TODO: Authorization only necessary when NAV employee sends message to external user
                         val externalUserPin = payload.subscriptionKey // TODO: Must be obvious that subscriptionKey is always a PIN?
-                        val employeeAzureId = claims.get("oid")?.toString() ?: throw IllegalArgumentException("No oid claim found")
+                        val employeeAzureId = call.getClaim("oid") ?: throw IllegalArgumentException("No oid claim found")
 
                         val isAuthorized = isAuthorized(UUID.fromString(employeeAzureId), externalUserPin)
                         if (!isAuthorized) {
@@ -100,3 +98,7 @@ data class NyDialogNotification(
     val subscriptionKey: String,
     val eventType: EventType
 )
+
+private fun ApplicationCall.getClaim(name: String): String? =
+    this.authentication.principal<TokenValidationContextPrincipal>()
+        ?.context?.anyValidClaims?.get(name)?.toString()
