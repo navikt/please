@@ -18,7 +18,7 @@ fun Application.configureRouting(
     publishMessage: PublishMessage,
     pingRedis: PingRedis,
     ticketHandler: WsTicketHandler,
-    navEmployeeIsAuthorized: navEmployeeIsAuthorized) {
+    navEmployeeIsAuthorized: NavEmployeeIsAuthorized) {
     routing {
         route("/isAlive") {
             get {

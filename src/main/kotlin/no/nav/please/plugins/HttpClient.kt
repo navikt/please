@@ -20,4 +20,5 @@ fun Application.machineToMachineClient(): HttpClient {
             }
         }
     }
+    // TODO: Add retry
 }

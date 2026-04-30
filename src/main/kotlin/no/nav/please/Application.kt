@@ -21,7 +21,7 @@ fun Application.module() {
     configureSerialization()
     val httpClient = machineToMachineClient()
     val machineTokenProvider = MachineToMachineTokenProvider(this.environment.config)
-//    val verifyAuthorization = configureAuthorization(machineTokenProvider::getAccessToken)
+    val verifyAuthorization = configureAuthorization(httpClient, machineTokenProvider::getAccessToken)
     val (publishMessage, pingRedis, ticketStore) = configureRedis()
     val ticketHandler = WsTicketHandler(ticketStore)
     configureSockets(ticketHandler)
