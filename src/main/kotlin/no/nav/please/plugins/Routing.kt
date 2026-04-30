@@ -89,7 +89,7 @@ fun Application.configureRouting(
                 } catch (e: IllegalArgumentException) {
                     call.respond(HttpStatusCode.BadRequest, "Invalid auth")
                 } catch (e: Throwable) {
-                    call.respond(HttpStatusCode.InternalServerError, "Internal error")
+                    call.respond(HttpStatusCode.InternalServerError, "Internal error ${e.message}")
                     logger.warn("Internal error", e)
                 }
             }

@@ -6,6 +6,8 @@ import io.ktor.client.plugins.contentnegotiation.*
 import io.ktor.serialization.kotlinx.json.*
 import io.ktor.server.application.*
 
+
+
 fun Application.machineToMachineClient(): HttpClient {
     return HttpClient(OkHttp) {
         engine {

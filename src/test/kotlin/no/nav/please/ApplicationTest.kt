@@ -1,31 +1,44 @@
 package no.nav.please
 
 import com.github.tomakehurst.wiremock.WireMockServer
-import com.github.tomakehurst.wiremock.client.ResponseDefinitionBuilder
 import com.github.tomakehurst.wiremock.client.WireMock
 import com.github.tomakehurst.wiremock.client.WireMock.aResponse
+import io.kotest.assertions.withClue
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import io.kotest.matchers.string.shouldNotBeEmpty
 import io.ktor.client.*
+import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
+import io.ktor.client.plugins.logging.Logging
 import io.ktor.client.plugins.websocket.*
 import io.ktor.client.request.*
+import io.ktor.client.request.forms.formData
 import io.ktor.client.statement.*
 import io.ktor.http.*
+import io.ktor.serialization.kotlinx.json.json
+import io.ktor.server.application.Application
+import io.ktor.server.application.install
 import io.ktor.server.config.*
 import io.ktor.server.engine.*
+import io.ktor.server.response.respond
+import io.ktor.server.response.respondText
+import io.ktor.server.routing.get
+import io.ktor.server.routing.post
+import io.ktor.server.routing.routing
 import io.ktor.server.testing.*
 import io.ktor.websocket.*
-
 import kotlinx.coroutines.async
 import kotlinx.coroutines.withTimeout
 import kotlinx.serialization.json.Json
+import no.nav.please.ApplicationTest.Companion.entraAdHost
+import no.nav.please.ApplicationTest.Companion.poaoTilgangHost
 import no.nav.please.plugins.SocketResponse
 import no.nav.please.varsler.EventType
 import no.nav.please.varsler.IncomingDialogMessageFlow
 import no.nav.please.varsler.WsConnectionHolder
 import no.nav.security.mock.oauth2.MockOAuth2Server
+import okhttp3.HttpUrl
 import org.slf4j.LoggerFactory
 import redis.embedded.RedisServer
 import java.util.UUID
@@ -33,148 +46,169 @@ import java.util.UUID
 
 class ApplicationTest : StringSpec({
     lateinit var redisServer: RedisServer
-    lateinit var testApp: TestApplication
     lateinit var client: HttpClient
 
-    val wiremock = WireMockServer(9000)
-
-    beforeSpec {
-        testApp = TestApplication {
+    fun withMocks(block: suspend (client: HttpClient) -> Unit) {
+        testApplication {
+            client = createClient {
+                install(WebSockets)
+                install(Logging)
+                install(ContentNegotiation) {
+                    json(Json { ignoreUnknownKeys = true })
+                    formData()
+                }
+            }
             environment {
                 doConfig()
             }
-            application { module() }
+            application { module(client) }
+            mockPoaoTilgangPolicyEval()
+            mockAzureAdMachineTokenRequest()
+
+            block(client)
         }
-        client = testApp.createClient {
-            install(WebSockets)
-        }
+    }
+
+
+    beforeSpec {
         redisServer = RedisServer(6379)
         redisServer.start()
-        wiremock.start()
-        mockAzureAdMachineTokenRequest(wiremock)
     }
     afterSpec {
-        testApp.stop()
         redisServer.stop()
         IncomingDialogMessageFlow.stop()
         server.shutdown()
-        wiremock.stop()
     }
 
     "should notify subscribers on new dialog-message" {
-        val veileder1 = "Z123123"
-        val subscriptionKey1 = "12345678910"
+        withMocks { client ->
+            val veileder1 = "Z123123"
+            val subscriptionKey1 = "12345678910"
 
-        val veileder2 = "Z321321"
-        val subscriptionKey2 = "11111178910"
+            val veileder2 = "Z321321"
+            val subscriptionKey2 = "11111178910"
 
-        val veileder1token = client.getWsToken(subscriptionKey1, getAzureToken(veileder1))
-        val veileder2token = client.getWsToken(subscriptionKey2, getAzureToken(veileder2))
+            val veileder1token = client.getWsToken(subscriptionKey1, getAzureToken(veileder1))
+            val veileder2token = client.getWsToken(subscriptionKey2, getAzureToken(veileder2))
 
-        WsConnectionHolder.dialogListeners.values.sumOf { it.size } shouldBe 0
+            WsConnectionHolder.dialogListeners.values.sumOf { it.size } shouldBe 0
 
-        client.webSocket("/ws") {
-            awaitAuthInTest(veileder1token)
-            logger.info("Posting to veilarbdialog for test-subscriptionKey 1")
-            receiveAfter {
-                client.notifySubscribers(subscriptionKey1, EventType.NY_DIALOGMELDING_FRA_BRUKER_TIL_NAV)
-            } shouldBe EventType.NY_DIALOGMELDING_FRA_BRUKER_TIL_NAV
-            logger.info("Received message, closing websocket for subscriptionKey 1")
-            WsConnectionHolder.dialogListeners.values.sumOf { it.size } shouldBe 1
-            close(CloseReason(CloseReason.Codes.NORMAL, "Bye"))
-        }
-        client.webSocket("/ws") {
-            awaitAuthInTest(veileder2token)
-            logger.info("Posting to veilarbdialog for test-subscriptionKey 2")
-            receiveAfter {
-                client.notifySubscribers(subscriptionKey2, EventType.NY_DIALOGMELDING_FRA_BRUKER_TIL_NAV)
-            } shouldBe EventType.NY_DIALOGMELDING_FRA_BRUKER_TIL_NAV
-            logger.info("Received message, closing websocket for subscriptionKey 2")
-            close(CloseReason(CloseReason.Codes.NORMAL, "Bye"))
+            client.webSocket("/ws") {
+                awaitAuthInTest(veileder1token)
+                logger.info("Posting to veilarbdialog for test-subscriptionKey 1")
+                receiveAfter {
+                    client.notifySubscribers(subscriptionKey1, EventType.NY_DIALOGMELDING_FRA_BRUKER_TIL_NAV)
+                } shouldBe EventType.NY_DIALOGMELDING_FRA_BRUKER_TIL_NAV
+                logger.info("Received message, closing websocket for subscriptionKey 1")
+                WsConnectionHolder.dialogListeners.values.sumOf { it.size } shouldBe 1
+                close(CloseReason(CloseReason.Codes.NORMAL, "Bye"))
+            }
+            client.webSocket("/ws") {
+                awaitAuthInTest(veileder2token)
+                logger.info("Posting to veilarbdialog for test-subscriptionKey 2")
+                receiveAfter {
+                    client.notifySubscribers(subscriptionKey2, EventType.NY_DIALOGMELDING_FRA_BRUKER_TIL_NAV)
+                } shouldBe EventType.NY_DIALOGMELDING_FRA_BRUKER_TIL_NAV
+                logger.info("Received message, closing websocket for subscriptionKey 2")
+                close(CloseReason(CloseReason.Codes.NORMAL, "Bye"))
+            }
         }
 
     }
 
     "WsConnectionHolder should count correctly" {
-        val veileder1 = "Z123123"
-        val subscriptionKey1 = "12345678910"
-        val countBefore = WsConnectionHolder.dialogListeners.values.sumOf { it.size }
-        val veileder1token = client.getWsToken(subscriptionKey1, getAzureToken(veileder1))
-        client.webSocket("/ws") {
-            awaitAuthInTest(veileder1token)
-            WsConnectionHolder.dialogListeners.values.sumOf { it.size } shouldBe countBefore + 1
-        }
-        WsConnectionHolder.dialogListeners.values.sumOf { it.size } shouldBe countBefore
+        withMocks { client ->
+            val veileder1 = "Z123123"
+            val subscriptionKey1 = "12345678910"
+            val countBefore = WsConnectionHolder.dialogListeners.values.sumOf { it.size }
+            val veileder1token = client.getWsToken(subscriptionKey1, getAzureToken(veileder1))
+            client.webSocket("/ws") {
+                awaitAuthInTest(veileder1token)
+                WsConnectionHolder.dialogListeners.values.sumOf { it.size } shouldBe countBefore + 1
+            }
+            WsConnectionHolder.dialogListeners.values.sumOf { it.size } shouldBe countBefore
 
-        client.webSocket("/ws") {
-            send(Frame.Text("LOL"))
+            client.webSocket("/ws") {
+                send(Frame.Text("LOL"))
+                WsConnectionHolder.dialogListeners.values.sumOf { it.size } shouldBe countBefore
+            }
             WsConnectionHolder.dialogListeners.values.sumOf { it.size } shouldBe countBefore
         }
-        WsConnectionHolder.dialogListeners.values.sumOf { it.size } shouldBe countBefore
     }
 
     "should reestablish websocket and reuse subscription" {
-        val veileder1 = "Z123123"
-        val subscriptionKey1 = "12345678911"
-        val veileder1token = client.getWsToken(subscriptionKey1, getAzureToken(veileder1))
+        withMocks { client ->
+            val veileder1 = "Z123123"
+            val subscriptionKey1 = "12345678911"
+            val veileder1token = client.getWsToken(subscriptionKey1, getAzureToken(veileder1))
 
-        client.webSocket("/ws") {
-            awaitAuthInTest(veileder1token)
-            logger.info("Posting to veilarbdialog for test-subscriptionKey 1")
-            receiveAfter {
-                client.notifySubscribers(subscriptionKey1, EventType.NY_DIALOGMELDING_FRA_BRUKER_TIL_NAV)
-            } shouldBe EventType.NY_DIALOGMELDING_FRA_BRUKER_TIL_NAV
-            logger.info("Received message, closing websocket for subscriptionKey 1")
-            close(CloseReason(CloseReason.Codes.NORMAL, "Bye"))
-        }
-        client.webSocket("/ws") {
-            logger.info("Reestablish session with same token")
-            awaitAuthInTest(veileder1token)
-            receiveAfter {
-                client.notifySubscribers(subscriptionKey1, EventType.NY_DIALOGMELDING_FRA_BRUKER_TIL_NAV)
-            } shouldBe EventType.NY_DIALOGMELDING_FRA_BRUKER_TIL_NAV
-            logger.info("Posting to veilarbdialog for test-subscriptionKey 1")
-            logger.info("Received message, closing websocket for subscriptionKey 1")
-            close(CloseReason(CloseReason.Codes.NORMAL, "Bye"))
+            client.webSocket("/ws") {
+                awaitAuthInTest(veileder1token)
+                logger.info("Posting to veilarbdialog for test-subscriptionKey 1")
+                receiveAfter {
+                    client.notifySubscribers(subscriptionKey1, EventType.NY_DIALOGMELDING_FRA_BRUKER_TIL_NAV)
+                } shouldBe EventType.NY_DIALOGMELDING_FRA_BRUKER_TIL_NAV
+                logger.info("Received message, closing websocket for subscriptionKey 1")
+                close(CloseReason(CloseReason.Codes.NORMAL, "Bye"))
+            }
+            client.webSocket("/ws") {
+                logger.info("Reestablish session with same token")
+                awaitAuthInTest(veileder1token)
+                receiveAfter {
+                    client.notifySubscribers(subscriptionKey1, EventType.NY_DIALOGMELDING_FRA_BRUKER_TIL_NAV)
+                } shouldBe EventType.NY_DIALOGMELDING_FRA_BRUKER_TIL_NAV
+                logger.info("Posting to veilarbdialog for test-subscriptionKey 1")
+                logger.info("Received message, closing websocket for subscriptionKey 1")
+                close(CloseReason(CloseReason.Codes.NORMAL, "Bye"))
+            }
         }
     }
 
     "should be able to subscribe to selected events" {
-        val person = "123123123"
-        val veileder = "Z223123"
+        withMocks { client ->
+            val person = "123123123"
+            val veileder = "Z223123"
 
-        val onlyBrukerTilNav = client.getWsToken(person, veileder, listOf(EventType.NY_DIALOGMELDING_FRA_BRUKER_TIL_NAV))
-        val veileder2 = "Z223124"
-        val allEvents = client.getWsToken(person, veileder2)
+            val onlyBrukerTilNav =
+                client.getWsToken(person, veileder, listOf(EventType.NY_DIALOGMELDING_FRA_BRUKER_TIL_NAV))
+            val veileder2 = "Z223124"
+            val allEvents = client.getWsToken(person, veileder2)
 
-        val subscriptionKey = "123123123"
-        val veiledertoken = client.getWsToken(subscriptionKey, getAzureToken(veileder), listOf(EventType.NY_DIALOGMELDING_FRA_BRUKER_TIL_NAV))
+            val subscriptionKey = "123123123"
+            val veiledertoken = client.getWsToken(
+                subscriptionKey,
+                getAzureToken(veileder),
+                listOf(EventType.NY_DIALOGMELDING_FRA_BRUKER_TIL_NAV)
+            )
 
-        client.webSocket("/ws") {
-            awaitAuthInTest(allEvents)
-            receiveAfter {
-                client.webSocket("/ws") {
-                    awaitAuthInTest(onlyBrukerTilNav)
-                    receiveAfter {
-                        client.notifySubscribers(person, EventType.NY_DIALOGMELDING_FRA_NAV_TIL_BRUKER)
-                        client.notifySubscribers(person, EventType.NY_DIALOGMELDING_FRA_BRUKER_TIL_NAV)
-                    } shouldBe EventType.NY_DIALOGMELDING_FRA_BRUKER_TIL_NAV
-                }
-            } shouldBe EventType.NY_DIALOGMELDING_FRA_NAV_TIL_BRUKER
+            client.webSocket("/ws") {
+                awaitAuthInTest(allEvents)
+                receiveAfter {
+                    client.webSocket("/ws") {
+                        awaitAuthInTest(onlyBrukerTilNav)
+                        receiveAfter {
+                            client.notifySubscribers(person, EventType.NY_DIALOGMELDING_FRA_NAV_TIL_BRUKER)
+                            client.notifySubscribers(person, EventType.NY_DIALOGMELDING_FRA_BRUKER_TIL_NAV)
+                        } shouldBe EventType.NY_DIALOGMELDING_FRA_BRUKER_TIL_NAV
+                    }
+                } shouldBe EventType.NY_DIALOGMELDING_FRA_NAV_TIL_BRUKER
+            }
         }
     }
 
     "should fail on invalid subscription" {
-        val veileder = "Z123123"
-        val subscriptionKey = "12345678911"
-        val token = client.getWsToken(subscriptionKey, getAzureToken(veileder))
-        client.webSocket("/ws") {
-            send(Frame.Text("LOL"))
-            (incoming.receive() as Frame.Text).readText() shouldBe SocketResponse.INVALID_TOKEN.name
-            send(Frame.Text(UUID.randomUUID().toString()))
-            (incoming.receive() as Frame.Text).readText() shouldBe SocketResponse.INVALID_TOKEN.name
-            send(Frame.Text(token))
-            (incoming.receive() as Frame.Text).readText() shouldBe SocketResponse.AUTHENTICATED.name
+        withMocks { client ->
+            val veileder = "Z123123"
+            val subscriptionKey = "12345678911"
+            val token = client.getWsToken(subscriptionKey, getAzureToken(veileder))
+            client.webSocket("/ws") {
+                send(Frame.Text("LOL"))
+                (incoming.receive() as Frame.Text).readText() shouldBe SocketResponse.INVALID_TOKEN.name
+                send(Frame.Text(UUID.randomUUID().toString()))
+                (incoming.receive() as Frame.Text).readText() shouldBe SocketResponse.INVALID_TOKEN.name
+                send(Frame.Text(token))
+                (incoming.receive() as Frame.Text).readText() shouldBe SocketResponse.AUTHENTICATED.name
+            }
         }
     }
 
@@ -207,22 +241,26 @@ class ApplicationTest : StringSpec({
               }
         """
 
+        val poaoTilgangHost = "http://poao-tilgang-api.test"
+        val entraAdHost = "http://entra-ad.test"
+        val entraAdTokenEndpoint = "$entraAdHost/tokenEndpoint"
         private fun ApplicationEnvironmentBuilder.doConfig(
             acceptedIssuer: String = "default",
             acceptedAudience: String = "default"
         ) {
+            val wellKnownUrl = server.wellKnownUrl(acceptedIssuer)
             config = MapApplicationConfig(
                 "no.nav.security.jwt.issuers.size" to "1",
                 "no.nav.security.jwt.issuers.0.issuer_name" to acceptedIssuer,
-                "no.nav.security.jwt.issuers.0.discoveryurl" to "${server.wellKnownUrl(acceptedIssuer)}",
+                "no.nav.security.jwt.issuers.0.discoveryurl" to "$wellKnownUrl",
                 "no.nav.security.jwt.issuers.0.accepted_audience" to acceptedAudience,
                 "topic.ny-dialog" to testTopic,
                 "valkey.host" to "rediss://localhost:6379",
                 "valkey.channel" to "dab.dialog-events-v1",
-                "poao-tilgang.url" to "http://app.namespace.svc.cluster.local",
+                "poao-tilgang.url" to poaoTilgangHost,
                 "poao-tilgang.scope" to "api://cluster.namespace.app/.default",
                 "azure.client-id" to "clientId",
-                "azure.token-endpoint" to "http://localhost:9000/tokenEndpoint",
+                "azure.token-endpoint" to entraAdTokenEndpoint,
                 "azure.client-secret" to "clientSecret"
             )
         }
@@ -257,14 +295,18 @@ fun getTicketBody(subscriptionKey: String, events: List<EventType>?): String {
 fun getAzureToken(navIdent: String) = ApplicationTest.server.issueToken(subject = navIdent, claims = mapOf("NAVident" to navIdent, "oid" to UUID.randomUUID())).serialize()
 
 suspend fun HttpClient.getWsToken(subscriptionKey: String, accessToken: String, events: List<EventType>? = null) : String {
-    val authToken = this.post("/ws-auth-ticket") {
+    val (status, body) = this.post("/ws-auth-ticket") {
         bearerAuth(accessToken)
         contentType(ContentType.Application.Json)
         setBody(getTicketBody(subscriptionKey, events))
-    }.bodyAsText()
-    authToken.shouldNotBeEmpty()
-    authToken shouldNotBe null
-    return authToken
+    }
+        .let { it.status to it.bodyAsText() }
+    withClue("Expected status OK but got $status $body") {
+        status shouldBe HttpStatusCode.OK
+    }
+    body.shouldNotBeEmpty()
+    body shouldNotBe null
+    return body
 }
 
 suspend fun HttpClient.notifySubscribers(subscriptionKey: String, eventType: EventType) {
@@ -273,6 +315,45 @@ suspend fun HttpClient.notifySubscribers(subscriptionKey: String, eventType: Eve
         contentType(ContentType.Application.Json)
         setBody("""{ "subscriptionKey": "$subscriptionKey", "eventType": "${eventType.name}" }""")
     }.status shouldBe HttpStatusCode.OK
+}
+
+fun TestApplicationBuilder.mockPoaoTilgangPolicyEval() {
+    externalServices {
+        hosts(poaoTilgangHost) {
+            this.install(io.ktor.server.plugins.contentnegotiation.ContentNegotiation) {
+                json()
+            }
+            this.routing {
+                post("/api/v1/evaluate") {
+                    call.respondText(
+                        """{ "results": [{ "requestId": "4a7ab7c2-80bc-4740-afce-edf0e364929f", "decision": { "type": "PERMIT" } }] }""".trimIndent(),
+                        contentType = ContentType.Application.Json,
+                        status = HttpStatusCode.OK
+                    )
+                }
+            }
+        }
+    }
+}
+
+fun TestApplicationBuilder.mockAzureAdMachineTokenRequest() {
+    externalServices {
+        hosts(entraAdHost) {
+            this.install(io.ktor.server.plugins.contentnegotiation.ContentNegotiation) {
+                json()
+                formData()
+            }
+            this.routing {
+                post("/tokenEndpoint") {
+                    call.respondText(
+                        text = """{ "access_token": "shiningToken", "expires_in": 10 }""",
+                        contentType = ContentType.Application.Json,
+                        status = HttpStatusCode.OK
+                    )
+                }
+            }
+        }
+    }
 }
 
 fun mockAzureAdMachineTokenRequest(wireMockServer: WireMockServer) {

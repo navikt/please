@@ -82,7 +82,7 @@ dependencies {
     implementation("io.ktor:ktor-server-call-id-jvm:$ktor_version")
     implementation("io.ktor:ktor-server-content-negotiation-jvm:$ktor_version")
     implementation("io.ktor:ktor-server-core-jvm:$ktor_version")
-    implementation("io.ktor:ktor-serialization-kotlinx-json-jvm:$ktor_version")
+    implementation("io.ktor:ktor-serialization-kotlinx-json-jvm:1.11")
     implementation("io.ktor:ktor-server-websockets-jvm:$ktor_version")
     implementation("io.ktor:ktor-server-netty-jvm:$ktor_version")
 
@@ -90,6 +90,7 @@ dependencies {
     implementation("io.ktor:ktor-client-okhttp-jvm:$ktor_version")
     implementation("io.ktor:ktor-client-auth:$ktor_version")
     implementation("io.ktor:ktor-client-content-negotiation:$ktor_version")
+    implementation("io.ktor:ktor-client-logging:$ktor_version")
 //    implementation("io.ktor:ktor-serialization-jackson:$ktor_version")
 
     implementation("io.ktor:ktor-server-auth:$ktor_version")

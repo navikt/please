@@ -14,14 +14,9 @@ import kotlinx.serialization.Serializable
 import no.nav.please.varsler.logger
 import java.time.LocalDateTime
 
-class MachineToMachineTokenProvider(config: ApplicationConfig) {
-    private val azureClientId = config.property("azure.client-id").getString()
-    private val clientSecret = config.property("azure.client-secret").toString()
-    private val tokenEndpoint = config.property("azure.token-endpoint").getString()
-    private val grantType = "client_credentials"
-    private val accessTokens: MutableMap<String, AccessToken>  = mutableMapOf()
-
-    private val httpClient = HttpClient(OkHttp) {
+class MachineToMachineTokenProvider(
+    config: ApplicationConfig,
+    val httpClient: HttpClient = HttpClient(OkHttp) {
         engine {
             config {
                 followRedirects(true)
@@ -29,12 +24,20 @@ class MachineToMachineTokenProvider(config: ApplicationConfig) {
         }
         install(ContentNegotiation) {
             json()
+            // Entra endpoint responds with JSON body but text/plain content type.
+            json(contentType = ContentType.Text.Plain)
         }
     }
+) {
+    private val azureClientId = config.property("azure.client-id").getString()
+    private val clientSecret = config.property("azure.client-secret").getString()
+    private val tokenEndpoint = config.property("azure.token-endpoint").getString()
+    private val grantType = "client_credentials"
+    private val accessTokens: MutableMap<String, AccessToken>  = mutableMapOf()
 
     private suspend fun fetchAndStoreAccessToken(scope: String): AccessToken {
         val tokenResponse: TokenResponse = try {
-            httpClient.post(tokenEndpoint) {
+            var res = httpClient.post(tokenEndpoint) {
                 contentType(ContentType.Application.FormUrlEncoded)
                 formData {
                     append("client_id", azureClientId)
@@ -42,7 +45,8 @@ class MachineToMachineTokenProvider(config: ApplicationConfig) {
                     append("scope", scope)
                     append("grant_type", grantType)
                 }
-            }.body<TokenResponse>()
+            }
+            res.body<TokenResponse>()
         } catch (e: Exception) {
             logger.error("Failed to fetch token", e)
             throw e
