@@ -4,7 +4,7 @@ import io.ktor.server.application.*
 import no.nav.poao_tilgang.client.*
 import java.util.*
 
-typealias navEmployeeIsAuthorized = (employeeAzureId: UUID, externalUserIdentityNumber: String) -> Boolean
+typealias navEmployeeIsAuthorized = (employeeAzureId: UUID, externalUserIdentityNumber: String) -> Boolean // TODO: Få typesatt på annet vis en typealias
 
 fun Application.configureAuthorization(getMachineToMachineToken: GetMachineToMachineToken): navEmployeeIsAuthorized {
 

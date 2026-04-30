@@ -1,23 +1,35 @@
 package no.nav.please.plugins
 
+import com.nimbusds.oauth2.sdk.token.AccessToken
+import io.ktor.client.*
 import io.ktor.server.application.*
-import no.nav.common.token_client.builder.AzureAdTokenClientBuilder
 
-typealias GetMachineToMachineToken = (scope: String) -> String
+typealias MachineToMachineToken = (scope: String) -> String
+typealias RefreshMachineToMachineToken = (scope: String) -> String
 
-fun Application.configureTokenProvider(): GetMachineToMachineToken {
+// TODO: See https://doc.nais.io/security/auth/azure-ad/usage/#oauth-20-client-credentials-grant
+fun Application.configureTokenProvider(httpClient: HttpClient): Pair<MachineToMachineToken, RefreshMachineToMachineToken>{
     val config = this.environment.config
     val azureClientId = config.property("azure.client-id").getString()
     val privateJwk = config.property("azure.jwk").getString()
     val tokenEndpoint = config.property("azure.token-endpoint").getString()
 
-    val tokenClient = AzureAdTokenClientBuilder.builder()
-        .withClientId(azureClientId)
-        .withPrivateJwk(privateJwk)
-        .withTokenEndpointUrl(tokenEndpoint)
-        .buildMachineToMachineTokenClient()
+    var accessToken: AccessToken? = null
 
-    return { scope ->
-        tokenClient.createMachineToMachineToken(scope)
+    suspend fun fetchAcccessToken(): String {
+        return "hentNyttAccessToken"
     }
+
+    val machineToMachineToken = { scope ->
+        if (acc)
+    }
+
+    val refreshMachineToMachineTOken
+
+
+    data class AccessToken(
+        val scope: String,
+        val token: String,
+    )
+
 }
