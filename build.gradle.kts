@@ -1,11 +1,13 @@
 import io.ktor.plugin.features.*
 
 val ktor_version: String by project
+val ktor_server_tests_version: String by project
 val kotlin_version: String by project
 val logback_version: String by project
 val tokensupport_version: String by project
 val mockoath_version: String by project
 val kotest_version: String by project
+val kotest_extensions_version: String by project
 val prometheus_version: String by project
 val logstash_encoder_version: String by project
 val valkey_java_version: String by project
@@ -112,10 +114,11 @@ dependencies {
 
     testImplementation("io.kotest:kotest-runner-junit5:$kotest_version")
     testImplementation("io.kotest:kotest-assertions-core:$kotest_version")
+    testImplementation("io.kotest:kotest-extensions-wiremock:$kotest_extensions_version")
     testImplementation("org.signal:embedded-redis:0.8.3")
 
     testImplementation("no.nav.security:mock-oauth2-server:$mockoath_version")
-    testImplementation("io.ktor:ktor-server-tests-jvm:2.3.6")
-    testImplementation("io.ktor:ktor-client-websockets-jvm:2.3.6")
+    testImplementation("io.ktor:ktor-server-tests-jvm:$ktor_server_tests_version")
+    testImplementation("io.ktor:ktor-client-websockets-jvm:$ktor_version")
     testImplementation("org.jetbrains.kotlin:kotlin-test-junit:$kotlin_version")
 }

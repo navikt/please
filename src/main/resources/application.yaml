@@ -36,4 +36,4 @@ azure:
 
 poao-tilgang:
   url: "$POAO_TILGANG_CLIENT_URL"
-  token-scope: "$POAO_TILGANG_CLIENT_SCOPE"
+  scope: "$POAO_TILGANG_CLIENT_SCOPE"
