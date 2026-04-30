@@ -4,9 +4,9 @@ import io.ktor.server.application.*
 import no.nav.poao_tilgang.client.*
 import java.util.*
 
-typealias isAuthorizedToContactExternalUser = (employeeAzureId: UUID, externalUserIdentityNumber: String) -> Boolean
+typealias navEmployeeIsAuthorized = (employeeAzureId: UUID, externalUserIdentityNumber: String) -> Boolean
 
-fun Application.configurePoaoTilgangClient(getMachineToMachineToken: GetMachineToMachineToken): isAuthorizedToContactExternalUser {
+fun Application.configureAuthorization(getMachineToMachineToken: GetMachineToMachineToken): navEmployeeIsAuthorized {
 
     val config = this.environment.config
     val poaoTilgangUrl = config.property("poao-tilgang.url").getString()
