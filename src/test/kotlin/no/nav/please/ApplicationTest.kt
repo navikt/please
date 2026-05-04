@@ -17,13 +17,10 @@ import io.ktor.client.request.forms.formData
 import io.ktor.client.statement.*
 import io.ktor.http.*
 import io.ktor.serialization.kotlinx.json.json
-import io.ktor.server.application.Application
 import io.ktor.server.application.install
 import io.ktor.server.config.*
 import io.ktor.server.engine.*
-import io.ktor.server.response.respond
 import io.ktor.server.response.respondText
-import io.ktor.server.routing.get
 import io.ktor.server.routing.post
 import io.ktor.server.routing.routing
 import io.ktor.server.testing.*
@@ -38,7 +35,6 @@ import no.nav.please.varsler.EventType
 import no.nav.please.varsler.IncomingDialogMessageFlow
 import no.nav.please.varsler.WsConnectionHolder
 import no.nav.security.mock.oauth2.MockOAuth2Server
-import okhttp3.HttpUrl
 import org.slf4j.LoggerFactory
 import redis.embedded.RedisServer
 import java.util.UUID
@@ -113,7 +109,6 @@ class ApplicationTest : StringSpec({
                 close(CloseReason(CloseReason.Codes.NORMAL, "Bye"))
             }
         }
-
     }
 
     "WsConnectionHolder should count correctly" {
@@ -167,18 +162,18 @@ class ApplicationTest : StringSpec({
     "should be able to subscribe to selected events" {
         withMocks { client ->
             val person = "123123123"
+
             val veileder = "Z223123"
-
-            val onlyBrukerTilNav =
-                client.getWsToken(person, veileder, listOf(EventType.NY_DIALOGMELDING_FRA_BRUKER_TIL_NAV))
-            val veileder2 = "Z223124"
-            val allEvents = client.getWsToken(person, veileder2)
-
-            val subscriptionKey = "123123123"
-            val veiledertoken = client.getWsToken(
-                subscriptionKey,
+            val onlyBrukerTilNav = client.getWsToken(
+                person,
                 getAzureToken(veileder),
                 listOf(EventType.NY_DIALOGMELDING_FRA_BRUKER_TIL_NAV)
+            )
+
+            val veileder2 = "Z223124"
+            val allEvents = client.getWsToken(
+                person,
+                getAzureToken(veileder2)
             )
 
             client.webSocket("/ws") {
@@ -301,7 +296,7 @@ suspend fun HttpClient.getWsToken(subscriptionKey: String, accessToken: String, 
         setBody(getTicketBody(subscriptionKey, events))
     }
         .let { it.status to it.bodyAsText() }
-    withClue("Expected status OK but got $status $body") {
+    withClue("Failed to get web-socket-token from /ws-auth-ticket in veilarboppfolging-mock, expected status OK but got $status $body") {
         status shouldBe HttpStatusCode.OK
     }
     body.shouldNotBeEmpty()
