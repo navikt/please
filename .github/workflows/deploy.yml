@@ -35,6 +35,9 @@ jobs:
     - name: Build and push image and SBOM to OCI registry
       uses: nais/docker-build-push@45d352fb62fb52ccb5ff6cba22c047fa02b35321
       id: docker-build-push
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        GITHUB_ACTOR: ${{ github.actor }}
       with:
         team: dab
         identity_provider: ${{ secrets.NAIS_WORKLOAD_IDENTITY_PROVIDER }} # Provided as Organization Secret
@@ -42,8 +45,6 @@ jobs:
     - name: Deploy to NAIS ${{ inputs.env }}
       uses: nais/deploy/actions/deploy@fa754451577294aae42872a69b888b3470478ec1
       env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        GITHUB_ACTOR: ${{ github.actor }}
         CLUSTER: ${{ inputs.env }}-gcp
         RESOURCE: nais/nais-${{ inputs.env }}.yaml
         VAR: image=${{ steps.docker-build-push.outputs.image }}
