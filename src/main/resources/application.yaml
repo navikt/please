@@ -35,5 +35,5 @@ azure:
   client-secret: "$AZURE_APP_CLIENT_SECRET"
 
 poao-tilgang:
-  url: "$POAO_TILGANG_CLIENT_URL"
-  scope: "$POAO_TILGANG_CLIENT_SCOPE"
+  url: "$POAO_TILGANG_URL"
+  scope: "$POAO_TILGANG_SCOPE"
