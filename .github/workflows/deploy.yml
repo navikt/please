@@ -40,8 +40,6 @@ jobs:
         GITHUB_ACTOR: ${{ github.actor }}
       with:
         team: dab
-        identity_provider: ${{ secrets.NAIS_WORKLOAD_IDENTITY_PROVIDER }} # Provided as Organization Secret
-        project_id: ${{ inputs.NAIS_MANAGEMENT_PROJECT_ID }} # Provided as Organization Variable
     - name: Deploy to NAIS ${{ inputs.env }}
       uses: nais/deploy/actions/deploy@fa754451577294aae42872a69b888b3470478ec1
       env:
