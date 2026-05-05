@@ -42,6 +42,8 @@ jobs:
     - name: Deploy to NAIS ${{ inputs.env }}
       uses: nais/deploy/actions/deploy@fa754451577294aae42872a69b888b3470478ec1
       env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        GITHUB_ACTOR: ${{ github.actor }}
         CLUSTER: ${{ inputs.env }}-gcp
         RESOURCE: nais/nais-${{ inputs.env }}.yaml
         VAR: image=${{ steps.docker-build-push.outputs.image }}
