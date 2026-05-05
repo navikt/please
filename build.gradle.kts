@@ -43,13 +43,6 @@ kotlin {
 repositories {
     mavenCentral()
     maven("https://github-package-registry-mirror.gc.nav.no/cached/maven-release")
-//    maven {
-//        url = uri("https://maven.pkg.github.com/navikt/poao-tilgang")
-//        credentials {
-//            username = project.findProperty("githubUsername") as String? ?: System.getenv("GITHUB_ACTOR")
-//            password = project.findProperty("githubPassword") as String? ?: System.getenv("GITHUB_TOKEN")
-//        }
-//    }
 }
 
 tasks.withType<Test>().configureEach {
