@@ -97,5 +97,5 @@ private data class TokenResponse(
     @SerialName("expires_in")
     val expiresIn: Long,
     @SerialName("token_type")
-    val tokenType: String,
+    val tokenType: String? = null,
 )
