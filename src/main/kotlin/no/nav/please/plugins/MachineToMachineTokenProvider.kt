@@ -37,14 +37,16 @@ class MachineToMachineTokenProvider(
 
     private suspend fun fetchAndStoreAccessToken(scope: String): AccessToken {
         val tokenResponse = try {
-            val res = httpClient.submitForm(tokenEndpoint) {
-                parameters {
+            val res = httpClient.submitForm(
+                tokenEndpoint,
+                formParameters = parameters {
                     append("client_id", azureClientId)
                     append("client_secret", clientSecret)
                     append("scope", scope)
                     append("grant_type", grantType)
                 }
-            }
+            )
+
             if (res.status != HttpStatusCode.OK) {
                 val response = res.bodyAsText()
                 logger.error("Failed to fetch m2m token from EntraAD: $response")
