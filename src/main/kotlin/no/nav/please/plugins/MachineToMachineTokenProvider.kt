@@ -4,8 +4,7 @@ import io.ktor.client.*
 import io.ktor.client.call.*
 import io.ktor.client.engine.okhttp.*
 import io.ktor.client.plugins.contentnegotiation.*
-import io.ktor.client.request.*
-import io.ktor.client.request.forms.*
+import io.ktor.client.request.forms.submitForm
 import io.ktor.client.statement.bodyAsText
 import io.ktor.http.*
 import io.ktor.serialization.kotlinx.json.*
@@ -38,9 +37,8 @@ class MachineToMachineTokenProvider(
 
     private suspend fun fetchAndStoreAccessToken(scope: String): AccessToken {
         val tokenResponse = try {
-            val res = httpClient.post(tokenEndpoint) {
-                contentType(ContentType.Application.FormUrlEncoded)
-                formData {
+            val res = httpClient.submitForm(tokenEndpoint) {
+                parameters {
                     append("client_id", azureClientId)
                     append("client_secret", clientSecret)
                     append("scope", scope)
@@ -49,7 +47,7 @@ class MachineToMachineTokenProvider(
             }
             if (res.status != HttpStatusCode.OK) {
                 val response = res.bodyAsText()
-                logger.error("Failed to fetch m2m token from EntraAD: ${response}")
+                logger.error("Failed to fetch m2m token from EntraAD: $response")
                 throw IllegalStateException("Failed to fetch m2m token from EntraAD: ${res.status}")
             } else {
                 res.body<TokenResponse>()
