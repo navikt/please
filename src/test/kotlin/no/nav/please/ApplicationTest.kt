@@ -319,7 +319,7 @@ fun TestApplicationBuilder.mockPoaoTilgangPolicyEval() {
                 json()
             }
             this.routing {
-                post("/api/v1/evaluate") {
+                post("/api/v1/policy/evaluate") {
                     call.respondText(
                         """{ "results": [{ "requestId": "4a7ab7c2-80bc-4740-afce-edf0e364929f", "decision": { "type": "PERMIT" } }] }""".trimIndent(),
                         contentType = ContentType.Application.Json,

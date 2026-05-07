@@ -47,7 +47,7 @@ fun Application.configureAuthorization(
     val poaoTilgangScope = this.environment.config.property("poao-tilgang.scope").getString()
 
     suspend fun checkAuthorization(employeeAzureId: UUID, externalUserPin: String): Boolean {
-        val url = "$poaoTilgangBaseUrl/api/v1/evaluate"
+        val url = "$poaoTilgangBaseUrl/api/v1/policy/evaluate"
         val accessToken = getMachineToMachineToken(poaoTilgangScope)
 
         val response: HttpResponse = httpClient.post(url) {
