@@ -66,7 +66,7 @@ fun Application.configureAuthorization(
             evaluationResult.results.first().decision.type == DecisionTypeSurrogate.PERMIT
         } else {
             // TODO: Hvordan håndtere?
-            logger.error("Error in authorization evaluation request to poao-tilgang")
+            logger.error("Error in authorization evaluation request to poao-tilgang failed with status ${response.status.value}")
             throw RuntimeException()
         }
     }
