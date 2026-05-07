@@ -30,6 +30,25 @@ object UUIDSerializer : KSerializer<UUID> {
     }
 }
 
+
+@Serializable
+class EvaluatePoliciesRequest(
+    val requests: List<PolicyEvaluationRequestDto>
+)
+
+@Serializable
+enum class PolicyId {
+    NAV_ANSATT_TILGANG_TIL_EKSTERN_BRUKER_V2
+}
+
+@Serializable
+data class PolicyEvaluationRequestDto(
+    @Serializable(with = UUIDSerializer::class)
+    val requestId: UUID,
+    val policyInput: NavAnsattTilgangTilEksternBrukerPolicyInputV2Dto,
+    val policyId: PolicyId
+)
+
 @Serializable
 class NavAnsattTilgangTilEksternBrukerPolicyInputV2Dto(
     @Serializable(with = UUIDSerializer::class)
@@ -53,11 +72,23 @@ fun Application.configureAuthorization(
         val response: HttpResponse = httpClient.post(url) {
             header("Authorization", "Bearer $accessToken")
             contentType(ContentType.Application.Json)
-            setBody(NavAnsattTilgangTilEksternBrukerPolicyInputV2Dto(
-                navAnsattAzureId = employeeAzureId,
-                tilgangType = TilgangType.SKRIVE,
-                norskIdent = externalUserPin
-            ))
+            setBody(
+                EvaluatePoliciesRequest(
+                    listOf(
+                        PolicyEvaluationRequestDto(
+                            UUID.randomUUID(),
+                            NavAnsattTilgangTilEksternBrukerPolicyInputV2Dto(
+                                navAnsattAzureId = employeeAzureId,
+                                tilgangType = TilgangType.SKRIVE,
+                                norskIdent = externalUserPin
+                            ),
+                            PolicyId.NAV_ANSATT_TILGANG_TIL_EKSTERN_BRUKER_V2
+                        )
+
+                    )
+
+                )
+                )
         }
 
         return if (response.status == HttpStatusCode.OK) {
