@@ -1,7 +1,6 @@
 import io.ktor.plugin.features.*
 
 val ktor_version: String by project
-val ktor_server_tests_version: String by project
 val kotlin_version: String by project
 val logback_version: String by project
 val tokensupport_version: String by project
@@ -16,9 +15,9 @@ val poao_tilgang_version: String by project
 val common_version: String by project
 
 plugins {
-    kotlin("jvm") version "2.2.20"
-    id("io.ktor.plugin") version "3.3.0"
-    id("org.jetbrains.kotlin.plugin.serialization") version "2.2.20"
+    kotlin("jvm") version "2.3.21"
+    id("io.ktor.plugin") version "3.4.3"
+    id("org.jetbrains.kotlin.plugin.serialization") version "2.3.21"
 }
 
 group = "no.nav.please"
@@ -95,7 +94,7 @@ dependencies {
     implementation("io.arrow-kt:arrow-core:$arrow_version")
     implementation("io.arrow-kt:arrow-fx-coroutines:$arrow_version")
     implementation("io.arrow-kt:arrow-resilience-jvm:$arrow_version")
-    implementation("org.slf4j:slf4j-api:1.7.25")
+    implementation("org.slf4j:slf4j-api:2.0.17")
 
     implementation("net.logstash.logback:logstash-logback-encoder:$logstash_encoder_version")
 
@@ -110,10 +109,10 @@ dependencies {
     testImplementation("io.kotest:kotest-runner-junit5:$kotest_version")
     testImplementation("io.kotest:kotest-assertions-core:$kotest_version")
     testImplementation("io.kotest:kotest-extensions-wiremock:$kotest_extensions_version")
-    testImplementation("org.signal:embedded-redis:0.8.3")
+    testImplementation("org.signal:embedded-redis:0.9.1")
 
     testImplementation("no.nav.security:mock-oauth2-server:$mockoath_version")
-    testImplementation("io.ktor:ktor-server-tests-jvm:$ktor_server_tests_version")
+    testImplementation("io.ktor:ktor-server-test-host-jvm:$ktor_version")
     testImplementation("io.ktor:ktor-client-websockets-jvm:$ktor_version")
     testImplementation("org.jetbrains.kotlin:kotlin-test-junit:$kotlin_version")
 }

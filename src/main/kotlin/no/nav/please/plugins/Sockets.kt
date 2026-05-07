@@ -37,8 +37,7 @@ fun Application.configureSockets(ticketHandler: WsTicketHandler) {
                 logger.info("Authenticated, Sec-WebSocket-Key: $wsSocketKey")
                 for(frame in incoming) {
                     // Keep open until termination
-                    val message = incoming.receive()
-                    logger.info("Received unexpected message: ${message}, Sec-WebSocket-Key: $wsSocketKey")
+                    logger.info("Received unexpected message: ${frame}, Sec-WebSocket-Key: $wsSocketKey")
                 }
             } catch (e: ClosedReceiveChannelException) {
                 logger.info("onClose ${closeReason.await()}")

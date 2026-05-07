@@ -25,6 +25,7 @@ import io.ktor.server.routing.post
 import io.ktor.server.routing.routing
 import io.ktor.server.testing.*
 import io.ktor.websocket.*
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.async
 import kotlinx.coroutines.withTimeout
 import kotlinx.serialization.json.Json
@@ -121,13 +122,13 @@ class ApplicationTest : StringSpec({
                 awaitAuthInTest(veileder1token)
                 WsConnectionHolder.dialogListeners.values.sumOf { it.size } shouldBe countBefore + 1
             }
-            WsConnectionHolder.dialogListeners.values.sumOf { it.size } shouldBe countBefore
+            awaitListenerCount(countBefore)
 
             client.webSocket("/ws") {
                 send(Frame.Text("LOL"))
                 WsConnectionHolder.dialogListeners.values.sumOf { it.size } shouldBe countBefore
             }
-            WsConnectionHolder.dialogListeners.values.sumOf { it.size } shouldBe countBefore
+            awaitListenerCount(countBefore)
         }
     }
 
@@ -273,6 +274,14 @@ suspend fun DefaultClientWebSocketSession.awaitAuthInTest(token: String) {
 suspend fun DefaultClientWebSocketSession.receiveStringWithTimeout(): String {
     return withTimeout(50000) {
         (incoming.receive() as? Frame.Text)?.readText() ?: ""
+    }
+}
+
+suspend fun awaitListenerCount(expected: Int) {
+    withTimeout(5000) {
+        while (WsConnectionHolder.dialogListeners.values.sumOf { it.size } != expected) {
+            delay(10)
+        }
     }
 }
 
