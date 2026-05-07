@@ -7,10 +7,15 @@ import io.ktor.client.plugins.contentnegotiation.*
 import io.ktor.client.request.forms.submitForm
 import io.ktor.client.statement.bodyAsText
 import io.ktor.http.*
+import io.ktor.http.ContentType.Application.Json
+import io.ktor.serialization.kotlinx.json.*
+import io.ktor.serialization.kotlinx.json.DefaultJson
+import io.ktor.client.plugins.contentnegotiation.*
 import io.ktor.serialization.kotlinx.json.*
 import io.ktor.server.config.*
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.Json
 import no.nav.please.varsler.logger
 import java.time.LocalDateTime
 
@@ -23,7 +28,12 @@ class MachineToMachineTokenProvider(
             }
         }
         install(ContentNegotiation) {
-            json()
+            json(
+                json = Json {
+                    ignoreUnknownKeys = true
+                },
+                contentType = Json
+            )
             // Entra endpoint responds with JSON body but text/plain content type.
             json(contentType = ContentType.Text.Plain)
         }
@@ -90,6 +100,7 @@ private data class AccessToken(
     }
 }
 
+@kotlinx.serialization.json.JsonIgnoreUnknownKeys
 @Serializable
 private data class TokenResponse(
     @SerialName("access_token")
@@ -98,4 +109,6 @@ private data class TokenResponse(
     val expiresIn: Long,
     @SerialName("token_type")
     val tokenType: String? = null,
+    @SerialName("ext_expires_in")
+    val extExpiresIn: Long? = null,
 )
