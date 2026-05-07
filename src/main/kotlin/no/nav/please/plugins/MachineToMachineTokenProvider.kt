@@ -1,0 +1,114 @@
+package no.nav.please.plugins
+
+import io.ktor.client.*
+import io.ktor.client.call.*
+import io.ktor.client.engine.okhttp.*
+import io.ktor.client.plugins.contentnegotiation.*
+import io.ktor.client.request.forms.submitForm
+import io.ktor.client.statement.bodyAsText
+import io.ktor.http.*
+import io.ktor.http.ContentType.Application.Json
+import io.ktor.serialization.kotlinx.json.*
+import io.ktor.serialization.kotlinx.json.DefaultJson
+import io.ktor.client.plugins.contentnegotiation.*
+import io.ktor.serialization.kotlinx.json.*
+import io.ktor.server.config.*
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.Json
+import no.nav.please.varsler.logger
+import java.time.LocalDateTime
+
+class MachineToMachineTokenProvider(
+    config: ApplicationConfig,
+    val httpClient: HttpClient = HttpClient(OkHttp) {
+        engine {
+            config {
+                followRedirects(true)
+            }
+        }
+        install(ContentNegotiation) {
+            json(
+                json = Json {
+                    ignoreUnknownKeys = true
+                },
+                contentType = Json
+            )
+            // Entra endpoint responds with JSON body but text/plain content type.
+            json(contentType = ContentType.Text.Plain)
+        }
+    }
+) {
+    private val azureClientId = config.property("azure.client-id").getString()
+    private val clientSecret = config.property("azure.client-secret").getString()
+    private val tokenEndpoint = config.property("azure.token-endpoint").getString()
+    private val grantType = "client_credentials"
+    private val accessTokens: MutableMap<String, AccessToken>  = mutableMapOf()
+
+    private suspend fun fetchAndStoreAccessToken(scope: String): AccessToken {
+        val tokenResponse = try {
+            val res = httpClient.submitForm(
+                tokenEndpoint,
+                formParameters = parameters {
+                    append("client_id", azureClientId)
+                    append("client_secret", clientSecret)
+                    append("scope", scope)
+                    append("grant_type", grantType)
+                }
+            )
+
+            if (res.status != HttpStatusCode.OK) {
+                val response = res.bodyAsText()
+                logger.error("Failed to fetch m2m token from EntraAD: $response")
+                throw IllegalStateException("Failed to fetch m2m token from EntraAD: ${res.status}")
+            } else {
+                res.body<TokenResponse>()
+            }
+        } catch (e: Exception) {
+            logger.error("Failed to fetch token", e)
+            throw e
+        }
+
+        val accessToken = AccessToken(
+            scope = scope,
+            token = tokenResponse.accessToken,
+            expires = LocalDateTime.now().plusSeconds(tokenResponse.expiresIn)
+        )
+        accessTokens[scope] = accessToken
+        return accessToken
+    }
+
+    suspend fun getAccessToken(scope: String): String {
+        val existingToken = accessTokens[scope]
+
+        return if (existingToken == null || existingToken.hasExpired()) {
+            fetchAndStoreAccessToken(scope).token
+        } else {
+            existingToken.token
+        }
+    }
+}
+
+private data class AccessToken(
+    val scope: String,
+    val token: String,
+    val expires: LocalDateTime
+) {
+    fun hasExpired(): Boolean {
+        val marginSeconds = 1L
+        return LocalDateTime.now().isAfter(expires.plusSeconds(marginSeconds))
+    }
+}
+
+@kotlinx.serialization.json.JsonIgnoreUnknownKeys
+@Serializable
+private data class TokenResponse(
+    @SerialName("access_token")
+    val accessToken: String,
+    @SerialName("expires_in")
+    val expiresIn: Long,
+    @SerialName("token_type")
+    val tokenType: String? = null,
+    @SerialName("ext_expires_in")
+    val extExpiresIn: Long? = null,
+)

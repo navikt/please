@@ -62,3 +62,12 @@ spec:
         - application: veilarbpersonflate
           namespace: poao
           cluster: dev-gcp
+    outbound:
+      rules:
+        - application: poao-tilgang
+          namespace: poao
+  env:
+    - name: POAO_TILGANG_URL
+      value: http://poao-tilgang.poao
+    - name: POAO_TILGANG_SCOPE
+      value: api://dev-gcp.poao.poao-tilgang/.default
