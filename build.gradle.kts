@@ -1,7 +1,6 @@
 import io.ktor.plugin.features.*
 
 val ktor_version: String by project
-val ktor_server_tests_version: String by project
 val kotlin_version: String by project
 val logback_version: String by project
 val tokensupport_version: String by project
@@ -113,7 +112,7 @@ dependencies {
     testImplementation("org.signal:embedded-redis:0.8.3")
 
     testImplementation("no.nav.security:mock-oauth2-server:$mockoath_version")
-    testImplementation("io.ktor:ktor-server-tests-jvm:$ktor_server_tests_version")
+    testImplementation("io.ktor:ktor-server-test-host:$ktor_version")
     testImplementation("io.ktor:ktor-client-websockets-jvm:$ktor_version")
     testImplementation("org.jetbrains.kotlin:kotlin-test-junit:$kotlin_version")
 }
