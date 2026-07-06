@@ -33,7 +33,7 @@ jobs:
     - name: PLEASE - Test
       run: ./gradlew test
     - name: Build and push image and SBOM to OCI registry
-      uses: nais/docker-build-push@751a312f0803eb96a05a41fadf51be19b7be362c
+      uses: nais/docker-build-push@31c3a7321909bcb20799fdf46153fec721fd9512
       id: docker-build-push
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
