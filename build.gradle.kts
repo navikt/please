@@ -15,9 +15,9 @@ val poao_tilgang_version: String by project
 val common_version: String by project
 
 plugins {
-    kotlin("jvm") version "2.3.21"
-    id("io.ktor.plugin") version "3.4.0"
-    id("org.jetbrains.kotlin.plugin.serialization") version "2.3.21"
+    kotlin("jvm") version "2.4.0"
+    id("io.ktor.plugin") version "3.5.1"
+    id("org.jetbrains.kotlin.plugin.serialization") version "2.4.0"
 }
 
 group = "no.nav.please"
@@ -107,7 +107,7 @@ dependencies {
 
     testImplementation("io.kotest:kotest-runner-junit5:$kotest_version")
     testImplementation("io.kotest:kotest-assertions-core:$kotest_version")
-    testImplementation("io.kotest:kotest-extensions-wiremock-jvm:$kotest_extensions_version")
+    testImplementation("io.kotest:kotest-extensions-wiremock-jvm:$kotest_version")
     testImplementation("org.signal:embedded-redis:0.9.1")
 
     testImplementation("no.nav.security:mock-oauth2-server:$mockoath_version")
