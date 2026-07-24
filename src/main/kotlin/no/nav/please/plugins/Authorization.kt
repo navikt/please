@@ -79,7 +79,7 @@ fun Application.configureAuthorization(
                             UUID.randomUUID(),
                             NavAnsattTilgangTilEksternBrukerPolicyInputV2Dto(
                                 navAnsattAzureId = employeeAzureId,
-                                tilgangType = TilgangType.SKRIVE,
+                                tilgangType = TilgangType.LESE,
                                 norskIdent = externalUserPin
                             ),
                             PolicyId.NAV_ANSATT_TILGANG_TIL_EKSTERN_BRUKER_V2

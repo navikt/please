@@ -2,7 +2,6 @@ package no.nav.please
 
 import io.ktor.client.HttpClient
 import io.ktor.server.application.*
-import io.ktor.server.config.configLoaders
 import io.ktor.server.netty.*
 import no.nav.please.plugins.*
 import no.nav.please.varsler.WsTicketHandler
