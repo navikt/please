@@ -34,7 +34,6 @@ fun Application.configureSockets(ticketHandler: WsTicketHandler) {
                 wsListener = awaitAuthentication(incoming, ticketHandler)
                 addListener(wsListener)
                 this.send(SocketResponse.AUTHENTICATED.name)
-                logger.info("Authenticated, Sec-WebSocket-Key: $wsSocketKey")
                 for(frame in incoming) {
                     // Keep open until termination
                     logger.info("Received unexpected message: $frame, Sec-WebSocket-Key: $wsSocketKey")

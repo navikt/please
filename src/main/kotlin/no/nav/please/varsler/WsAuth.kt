@@ -56,7 +56,6 @@ fun ConsumeTicketError.toTicketAuthError(): TicketAuthError = when (this) {
 
 suspend fun DefaultWebSocketServerSession.tryAuthenticateWithMessage(frame: Frame, ticketHandler: WsTicketHandler): AuthResult {
     try {
-        logger.info("Received ticket, trying to authenticate $frame")
         if (frame !is Frame.Text) return AuthResult.Failed
         val text = frame.readText()
         return either {
