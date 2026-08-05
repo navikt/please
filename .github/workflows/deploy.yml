@@ -41,7 +41,7 @@ jobs:
       with:
         team: dab
     - name: Deploy to NAIS ${{ inputs.env }}
-      uses: nais/deploy/actions/deploy@5fdd91aaf69bb0d6dd5e5118cdacb639f487b93b
+      uses: nais/deploy/actions/deploy@fc3eae3edebabdf67f7592102ae16176d5ba3b5f
       env:
         CLUSTER: ${{ inputs.env }}-gcp
         RESOURCE: nais/nais-${{ inputs.env }}.yaml
