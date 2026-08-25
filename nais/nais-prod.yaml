@@ -36,7 +36,7 @@ spec:
     limits:
       memory: 1024Mi
     requests:
-      cpu: 200m
+      cpu: 333m # this value was recommended in nais console based on usage
       memory: 768Mi
   observability:
     autoInstrumentation:
