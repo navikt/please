@@ -23,10 +23,12 @@ fun Application.configureRouting(
         route("/isAlive") {
             get {
                 val redisStatus = pingRedis()
-                val ready = isSubscribedToRedisPubSub() and redisStatus.isRight()
+                val wasSubscribedToRedisPubSub = isSubscribedToRedisPubSub()
+                val ready = wasSubscribedToRedisPubSub and redisStatus.isRight()
                 when (ready) {
                     false -> {
-                        logger.warn("Failed to ping redis in isAlive")
+                        val redisStatusMessage = redisStatus.fold({ it.latestException.message }, { "ok" })
+                        logger.warn("Failed to ping redis in isAlive pingStatus=${redisStatusMessage}, isSubscribedToRedisPubSub=${wasSubscribedToRedisPubSub}")
                         call.respond(HttpStatusCode.InternalServerError)
                     }
                     true -> {
@@ -34,14 +36,6 @@ fun Application.configureRouting(
                         call.respond(HttpStatusCode.OK)
                     }
                 }
-                pingRedis()
-                    .fold({
-                        logger.warn("Failed to ping redis in isAlive")
-                        call.respond(HttpStatusCode.InternalServerError)
-                    }, { redisStatus ->
-                        require(redisStatus == "PONG") { "Redis returnerer $redisStatus fra ping()" }
-                        call.respond(HttpStatusCode.OK)
-                    })
             }
         }
         route("/isReady") {
