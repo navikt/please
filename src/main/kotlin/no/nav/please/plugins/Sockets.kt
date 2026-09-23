@@ -46,8 +46,8 @@ fun Application.configureSockets(ticketHandler: WsTicketHandler) {
                 logger.warn("IOException: ${e.message}", e)
                 closeExceptionally(e)
             } catch (e: CancellationException) {
-                logger.warn("CancellationException: ${e.message}", e)
-                closeExceptionally(e)
+                logger.info("Coroutine was canceled using CancellationException: ${e.message}", e)
+                throw e
             } catch (e: Throwable) {
                 logger.warn("unhandled error: ${e.message}", e)
                 closeExceptionally(e)
