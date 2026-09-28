@@ -65,7 +65,13 @@ fun Application.configureRouting(
                         val externalUserPin = payload.subscriptionKey // TODO: Must be obvious that subscriptionKey is always a PIN?
                         val employeeAzureId = call.getClaim("oid") ?: throw RuntimeException("No oid claim found")
 
-                        if (!navEmployeeIsAuthorized(UUID.fromString(employeeAzureId), externalUserPin)) {
+                        val isAuthorized: Boolean = navEmployeeIsAuthorized(UUID.fromString(employeeAzureId), externalUserPin)
+                            .fold({
+                                call.respond(HttpStatusCode.InternalServerError, "Failed to handle auth ticket, internal error when checking auth: ${it.message}")
+                                return@post
+                            }, { it })
+
+                        if (!isAuthorized) {
                             call.respond(HttpStatusCode.Forbidden, "Not authorized to send message to the external user")
                             return@post
                         }

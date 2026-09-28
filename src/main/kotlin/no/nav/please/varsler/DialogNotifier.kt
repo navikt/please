@@ -1,5 +1,6 @@
 package no.nav.please.varsler
 
+import io.ktor.utils.io.CancellationException
 import io.ktor.websocket.*
 import kotlinx.coroutines.isActive
 import kotlinx.serialization.Serializable
@@ -42,6 +43,10 @@ object DialogNotifier {
                     }
                 }
         }.onFailure { error ->
+            if (error is CancellationException) {
+                logger.info("Could not notify subscribers, coroutine was cancelled")
+                throw error
+            }
             logger.warn("Failed to notify subscribers", error)
         }
     }
