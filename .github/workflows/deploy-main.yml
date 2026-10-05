@@ -52,8 +52,8 @@ jobs:
         env:
           CLUSTER: dev-gcp
           RESOURCE: nais/nais-dev.yaml
-          VAR: image=${{ needs.build.outputs.image }}
-          TELEMETRY: ${{ needs.build.outputs.telemetry }}
+          VAR: image=${{ needs.test-build-and-push.outputs.image }}
+          TELEMETRY: ${{ needs.test-build-and-push.outputs.telemetry }}
 
   deploy-prod:
     name: Deploy application to prod
@@ -69,10 +69,10 @@ jobs:
         env:
           CLUSTER: prod-gcp
           RESOURCE: nais/nais-prod.yaml
-          VAR: image=${{ needs.build.outputs.image }}
-          TELEMETRY: ${{ needs.build.outputs.telemetry }}
+          VAR: image=${{ needs.test-build-and-push.outputs.image }}
+          TELEMETRY: ${{ needs.test-build-and-push.outputs.telemetry }}
       - name: Slack Notification (deploy failure)
-        if: failure() && inputs.env == 'prod'
+        if: failure()
         uses: rtCamp/action-slack-notify@33ca3be66c6f378fe1610fd1d5258632dbed5e58
         env:
           SLACK_COLOR: danger
