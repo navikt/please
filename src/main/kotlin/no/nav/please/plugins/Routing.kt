@@ -19,30 +19,35 @@ fun Application.configureRouting(
     pingRedis: PingRedis,
     ticketHandler: WsTicketHandler,
     navEmployeeIsAuthorized: NavEmployeeIsAuthorized) {
+    suspend fun redisHealthStatus(): Pair<Boolean, String> {
+        val pingResult = pingRedis()
+        return pingResult.fold(
+            { false to (it.latestException.message ?: "redis ping failed") },
+            { pongResponse ->
+                when (pongResponse) {
+                    "PONG" -> true to "ok"
+                    else -> false to "Redis returnerte $pongResponse"
+                }
+            }
+        )
+    }
+
     routing {
         route("/isAlive") {
             get {
-                val redisStatus = pingRedis()
-                val wasSubscribedToRedisPubSub = isSubscribedToRedisPubSub()
-                val ready = wasSubscribedToRedisPubSub and redisStatus.isRight()
-                when (ready) {
-                    false -> {
-                        val redisStatusMessage = redisStatus.fold({ it.latestException.message }, { "ok" })
-                        logger.warn("Failed to ping redis in isAlive pingStatus=${redisStatusMessage}, isSubscribedToRedisPubSub=${wasSubscribedToRedisPubSub}")
-                        call.respond(HttpStatusCode.InternalServerError)
-                    }
-                    true -> {
-                        require(redisStatus.getOrNull() == "PONG") { "Redis returnerer $redisStatus fra ping()" }
-                        call.respond(HttpStatusCode.OK)
-                    }
-                }
+                call.respond(HttpStatusCode.OK)
             }
         }
         route("/isReady") {
             get {
-                val ready = isSubscribedToRedisPubSub() and pingRedis().fold({ false }, { true })
+                val (redisPingIsOk, errorMessage) = redisHealthStatus()
+                val wasSubscribedToRedisPubSub = isSubscribedToRedisPubSub()
+                val ready = wasSubscribedToRedisPubSub && redisPingIsOk
                 when (ready) {
-                    false -> call.respond(HttpStatusCode.InternalServerError)
+                    false -> {
+                        logger.warn("Failed to ping redis in isReady pingStatus=${errorMessage}, isSubscribedToRedisPubSub=${wasSubscribedToRedisPubSub}")
+                        call.respond(HttpStatusCode.InternalServerError)
+                    }
                     true -> call.respond(HttpStatusCode.OK)
                 }
             }

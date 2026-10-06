@@ -3,6 +3,7 @@ package no.nav.please.plugins
 import PubSubSubscribeConfigBuilder
 import PubsubConfigArgs
 import arrow.core.Either
+import arrow.core.left
 import io.ktor.server.application.*
 import io.valkey.DefaultJedisClientConfig
 import io.valkey.DefaultRedisCredentials
@@ -13,12 +14,14 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.withTimeoutOrNull
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import no.nav.please.retry.MaxRetryError
 import no.nav.please.retry.Retry
 import no.nav.please.varsler.*
 import org.slf4j.LoggerFactory
+import java.util.concurrent.TimeoutException
 
 typealias PublishMessage = suspend (NyDialogNotification) -> Either<MaxRetryError, Long>
 typealias PingRedis = suspend () -> Either<MaxRetryError, String>
@@ -70,9 +73,11 @@ fun Application.configureRedis(): Triple<PublishMessage, PingRedis, TicketStore>
             .onRight { numReceivers -> log.info("Published to $numReceivers") }
     }
     val pingRedis: PingRedis = {
-        Retry.withRetry {
-            jedisPool.ping()
-        }
+        withTimeoutOrNull(1_000) {
+            Retry.withRetry {
+                jedisPool.ping()
+            }
+        } ?: MaxRetryError(TimeoutException("Timed out waiting for redis ping")).left()
     }
 
     return Triple(publishMessage, pingRedis, RedisTicketStore(jedisPool))
