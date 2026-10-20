@@ -2,15 +2,12 @@ package no.nav.please.varsler
 
 import io.ktor.server.websocket.*
 import io.ktor.websocket.*
-import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.Serializable
 import no.nav.please.plugins.Metrics
-import java.util.*
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicInteger
 
 typealias SubscriptionKey = String
-//typealias ConnectionTicket = String
 
 @Serializable
 data class Subscription(
@@ -37,15 +34,21 @@ object WsConnectionHolder {
         val newWsListeners: List<WsListener> = currentSubscriptions
             ?.let { it + listOf(wsListener) } ?: listOf(wsListener)
         dialogListeners[wsListener.subscription.subscriptionKey] = newWsListeners
-        logger.info("Adding new listener, total listener")
+        logger.info("Adding new listener")
         numConnectionMetric.incrementAndGet()
     }
     suspend fun removeListener(wsListener: WsListener) {
         val currentSubscriptions = dialogListeners[wsListener.subscription.subscriptionKey]
         val newWsListeners: List<WsListener> = currentSubscriptions
             ?.filter { it.subscription != wsListener.subscription } ?: emptyList()
-        dialogListeners[wsListener.subscription.subscriptionKey] = newWsListeners
+        if (newWsListeners.isEmpty()) {
+            dialogListeners.remove(wsListener.subscription.subscriptionKey)
+        } else {
+            dialogListeners[wsListener.subscription.subscriptionKey] = newWsListeners
+        }
         wsListener.wsSession.close(CloseReason(CloseReason.Codes.GOING_AWAY,"unsubscribing"))
-        numConnectionMetric.decrementAndGet()
+        if (currentSubscriptions != null && newWsListeners.size < currentSubscriptions.size) {
+            numConnectionMetric.decrementAndGet()
+        }
     }
 }
