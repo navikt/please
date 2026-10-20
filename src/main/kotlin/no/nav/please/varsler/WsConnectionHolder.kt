@@ -40,14 +40,12 @@ object WsConnectionHolder {
         logger.info("Adding new listener, total listener")
         numConnectionMetric.incrementAndGet()
     }
-    fun removeListener(wsListener: WsListener) {
+    suspend fun removeListener(wsListener: WsListener) {
         val currentSubscriptions = dialogListeners[wsListener.subscription.subscriptionKey]
         val newWsListeners: List<WsListener> = currentSubscriptions
             ?.filter { it.subscription != wsListener.subscription } ?: emptyList()
         dialogListeners[wsListener.subscription.subscriptionKey] = newWsListeners
-        runBlocking {
-            wsListener.wsSession.close(CloseReason(CloseReason.Codes.GOING_AWAY,"unsubscribing"))
-        }
+        wsListener.wsSession.close(CloseReason(CloseReason.Codes.GOING_AWAY,"unsubscribing"))
         numConnectionMetric.decrementAndGet()
     }
 }
