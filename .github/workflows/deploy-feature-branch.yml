@@ -23,7 +23,7 @@ jobs:
       - name: PLEASE - Test
         run: ./gradlew test
       - name: Build and push image and SBOM to OCI registry
-        uses: nais/docker-build-push@423a915c9b72edf2ba848b88171ccb0489e2a40a
+        uses: nais/docker-build-push@588f76a6f45aeb1e75d5e8417ec6ef6d79b2b39f
         id: docker-build-push
         with:
           team: dab
