@@ -1,5 +1,3 @@
-import io.ktor.plugin.features.*
-
 val ktor_version: String by project
 val kotlin_version: String by project
 val logback_version: String by project
@@ -46,28 +44,6 @@ repositories {
 
 tasks.withType<Test>().configureEach {
     useJUnitPlatform()
-}
-
-data class GithubImageRegistry(
-    override val toImage: Provider<String>,
-    override val username: Provider<String>,
-    override val password: Provider<String>) : DockerImageRegistry
-
-ktor {
-    docker {
-        jreVersion.set(JavaVersion.VERSION_21)
-        localImageName.set("please")
-        imageTag.set(providers.environmentVariable("IMAGE_TAG"))
-        externalRegistry.set(
-            DockerImageRegistry.externalRegistry(
-                username = providers.environmentVariable("USERNAME"),
-                password = providers.environmentVariable("PASSWORD"),
-                project = provider { "please" },
-                hostname = provider { "ghcr.io" },
-                namespace = provider { "navikt" }
-            )
-        )
-    }
 }
 
 dependencies {
